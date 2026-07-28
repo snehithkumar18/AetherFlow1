@@ -237,7 +237,7 @@ public class ConnectionPool {
                                 
                                 ConnectionStateMachine.ConnectionState state = entry.stateMachine.getCurrentState();
                                 
-                                globalStateVersion = state.getStateId();
+                                globalStateVersion = globalStateVersion ^ state.getStateId();
                             }
                         }
                         

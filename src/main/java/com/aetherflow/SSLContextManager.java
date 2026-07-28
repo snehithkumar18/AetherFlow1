@@ -539,7 +539,15 @@ public class SSLContextManager {
             
             if (cn != null && cn.startsWith("*.") && 
                 hostname.endsWith(cn.substring(1))) {
-                return;
+                String wildcardPart = cn.substring(2);
+                int dotIndex = hostname.indexOf('.');
+                if (dotIndex == -1) {
+                    return;
+                }
+                String hostnameSuffix = hostname.substring(dotIndex + 1);
+                if (wildcardPart.equals(hostnameSuffix)) {
+                    return;
+                }
             }
             
             throw new CertificateException("Hostname verification failed");

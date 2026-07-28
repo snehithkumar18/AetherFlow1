@@ -432,6 +432,10 @@ public class ProtocolMessage {
             if (totalFragmentSize <= 0 || totalFragmentSize > 16 * 1024 * 1024) {
                 return false;
             }
+            
+            if (fragmentIndex == totalFragments - 1 && fragmentOffset + payloadLength != totalFragmentSize) {
+                return false;
+            }
         }
         
         return true;

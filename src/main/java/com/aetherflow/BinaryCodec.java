@@ -252,8 +252,18 @@ public class BinaryCodec {
                 if (bigIntLen < 0 || bigIntLen > MAX_COLLECTION_SIZE) {
                     throw new IOException("Invalid bigint length: " + bigIntLen);
                 }
+                if (bigIntLen == 0) {
+                    throw new IOException("Zero-length bigint not allowed");
+                }
                 byte[] bigIntBytes = new byte[bigIntLen];
                 dis.readFully(bigIntBytes);
+                
+                if (bigIntBytes[0] == 0 && bigIntLen > 1) {
+                    byte[] trimmed = new byte[bigIntLen - 1];
+                    System.arraycopy(bigIntBytes, 1, trimmed, 0, bigIntLen - 1);
+                    return new BigInteger(trimmed);
+                }
+                
                 return new BigInteger(bigIntBytes);
                 
             case TYPE_STRUCT:

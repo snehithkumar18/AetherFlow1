@@ -262,18 +262,18 @@ public class CacheManager {
                 return null;
             }
             
+            entry.recordAccess();
+            accessOrder.put(key, System.currentTimeMillis());
             
             if (config.enableWeakReferences) {
                 CacheEntry refCheck = entry.weakRef.get();
-                if (refCheck == null) {
+                if (refCheck == null || entry.evicted) {
                     stats.recordMiss(key);
                     remove(key);
                     return null;
                 }
             }
             
-            entry.recordAccess();
-            accessOrder.put(key, System.currentTimeMillis());
             stats.recordHit(key);
             
             return entry.value.clone();

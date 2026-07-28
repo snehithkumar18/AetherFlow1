@@ -230,6 +230,17 @@ public class SessionManager {
             
             sessionByAuthToken.put(authToken, sessionId);
             
+            if (sessionByAuthToken.size() > MAX_SESSIONS * 2) {
+                String oldestToken = sessionByAuthToken.keySet().iterator().next();
+                String oldSessionId = sessionByAuthToken.remove(oldestToken);
+                if (oldSessionId != null) {
+                    SessionEntry oldSession = sessions.remove(oldSessionId);
+                    if (oldSession != null) {
+                        oldSession.permissions.clear();
+                    }
+                }
+            }
+            
             totalSessionsCreated.incrementAndGet();
             
             return session;
