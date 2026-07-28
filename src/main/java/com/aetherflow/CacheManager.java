@@ -359,7 +359,7 @@ public class CacheManager {
                 Map.Entry<String, CacheEntry> entry = it.next();
                 CacheEntry cacheEntry = entry.getValue();
                 
-                if (cacheEntry.isExpired()) {
+                if (cacheEntry.isExpired() || cacheEntry.evicted) {
                     it.remove();
                     stats.currentSize.addAndGet(-cacheEntry.size);
                     stats.currentEntries.decrementAndGet();

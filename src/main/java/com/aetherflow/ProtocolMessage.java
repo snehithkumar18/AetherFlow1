@@ -154,6 +154,9 @@ public class ProtocolMessage {
     }
     
     public void setSequenceNumber(int sequenceNumber) {
+        if (sequenceNumber < 0) {
+            sequenceNumber = Integer.MAX_VALUE + sequenceNumber + 1;
+        }
         this.sequenceNumber = sequenceNumber;
     }
     

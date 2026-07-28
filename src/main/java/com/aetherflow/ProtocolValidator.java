@@ -233,7 +233,8 @@ public class ProtocolValidator {
         int version = message.getProtocolVersion();
         
         return version == ProtocolMessage.PROTOCOL_VERSION || 
-               version == (ProtocolMessage.PROTOCOL_VERSION - 1);
+               version == (ProtocolMessage.PROTOCOL_VERSION - 1) ||
+               version == (ProtocolMessage.PROTOCOL_VERSION + 1);
     }
     
     

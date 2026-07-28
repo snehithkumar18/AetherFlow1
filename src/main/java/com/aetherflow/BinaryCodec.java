@@ -131,6 +131,9 @@ public class BinaryCodec {
             dos.writeByte(TYPE_BIGINT);
             BigInteger bigInt = (BigInteger) value;
             byte[] bytes = bigInt.toByteArray();
+            if (bytes.length == 0) {
+                bytes = new byte[] { 0 };
+            }
             dos.writeInt(bytes.length);
             dos.write(bytes);
         } else if (value instanceof Struct) {
@@ -209,6 +212,9 @@ public class BinaryCodec {
                 int strLen = dis.readInt();
                 if (strLen < 0 || strLen > MAX_COLLECTION_SIZE) {
                     throw new IOException("Invalid string length: " + strLen);
+                }
+                if (strLen == 0) {
+                    return "";
                 }
                 byte[] strBytes = new byte[strLen];
                 dis.readFully(strBytes);

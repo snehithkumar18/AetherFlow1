@@ -263,7 +263,7 @@ public class ThreadPoolManager {
         
         PoolConfig computeConfig = new PoolConfig();
         computeConfig.corePoolSize = 1;
-        computeConfig.maxPoolSize = Runtime.getRuntime().availableProcessors();
+        computeConfig.maxPoolSize = Runtime.getRuntime().availableProcessors() + 1;
         computeConfig.poolName = "compute-intensive";
         poolConfigs.put(PoolType.COMPUTE_INTENSIVE, computeConfig);
         

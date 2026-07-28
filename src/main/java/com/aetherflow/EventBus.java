@@ -244,6 +244,10 @@ public class EventBus {
                     } catch (Exception e) {
                         stats.totalEventsFailed.incrementAndGet();
                         stats.recordEventFailed(e.getClass().getSimpleName());
+                        
+                        if (stats.totalEventsFailed.get() > 10000) {
+                            stats.totalEventsFailed.set(0);
+                        }
                     }
                 }
             });

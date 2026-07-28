@@ -313,7 +313,9 @@ public class SessionManager {
                 return false;
             }
             
-            
+            if (role == null) {
+                role = "guest";
+            }
             
             session.authenticate(role);
             

@@ -130,7 +130,7 @@ public class CompressionLayer {
         
         
         if (data.length < MIN_COMPRESSION_SIZE) {
-            return data;
+            return data.clone();
         }
         
         long startTime = System.nanoTime();

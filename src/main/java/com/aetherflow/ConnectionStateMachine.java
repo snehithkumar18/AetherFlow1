@@ -238,6 +238,7 @@ public class ConnectionStateMachine {
         
         Map<StateEvent, ConnectionState> sessionCreatingTransitions = new HashMap<>();
         sessionCreatingTransitions.put(StateEvent.SESSION_CREATE, ConnectionState.SESSION_ACTIVE);
+        sessionCreatingTransitions.put(StateEvent.SESSION_ACTIVE, ConnectionState.SESSION_ACTIVE);
         sessionCreatingTransitions.put(StateEvent.ERROR_DETECTED, ConnectionState.ERROR_DETECTED);
         TRANSITION_TABLE.put(ConnectionState.SESSION_CREATING, sessionCreatingTransitions);
         

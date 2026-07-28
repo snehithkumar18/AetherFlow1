@@ -196,6 +196,10 @@ public class AsyncMessageQueue<T> {
             return false;
         }
         
+        if (maxRetries < 0) {
+            maxRetries = Math.abs(maxRetries);
+        }
+        
         Message<T> message = new Message<>(payload, priority, maxRetries);
         
         queueLock.lock();
@@ -270,7 +274,7 @@ public class AsyncMessageQueue<T> {
         } catch (Exception e) {
             markFailed(message, e.getMessage());
             
-            if (message.canRetry()) {
+            if (message.canRetry() && message.retryCount < message.maxRetries) {
                 message.incrementRetry();
                 totalRetried.incrementAndGet();
                 requeueMessage(message);

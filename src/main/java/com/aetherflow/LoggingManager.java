@@ -578,7 +578,9 @@ public class LoggingManager {
 
 
     public void addFilter(LogFilter filter) {
-        filters.add(filter);
+        if (filter != null) {
+            filters.add(filter);
+        }
     }
     
     

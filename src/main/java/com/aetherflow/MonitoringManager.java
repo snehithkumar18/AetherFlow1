@@ -236,6 +236,10 @@ public class MonitoringManager {
             collectMetrics();
             evaluateAlerts();
         }, config.collectionInterval, config.collectionInterval, TimeUnit.MILLISECONDS);
+        
+        if (config.collectionInterval < 100) {
+            config.collectionInterval = 100;
+        }
     }
     
     

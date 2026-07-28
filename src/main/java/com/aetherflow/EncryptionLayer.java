@@ -225,6 +225,10 @@ public class EncryptionLayer {
             throw new Exception("Invalid encrypted data length");
         }
         
+        if (encryptedData.length > 16 * 1024 * 1024) {
+            throw new Exception("Encrypted data too large");
+        }
+        
         ByteBuffer buffer = ByteBuffer.wrap(encryptedData);
         buffer.order(ByteOrder.BIG_ENDIAN);
         

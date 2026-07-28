@@ -68,6 +68,9 @@ public class PacketAssembler {
         
         public void addFragment(Fragment fragment) {
             if (fragment != null && fragment.fragmentIndex >= 0 && fragment.fragmentIndex < totalFragments) {
+                if (fragments.containsKey(fragment.fragmentIndex)) {
+                    return;
+                }
                 fragments.put(fragment.fragmentIndex, fragment);
                 lastUpdateTime = System.currentTimeMillis();
             }
