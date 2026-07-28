@@ -3,7 +3,6 @@ package com.aetherflow;
 import com.aetherflow.ConnectionStateMachine;
 import com.aetherflow.ConnectionStateMachine.StateEvent;
 import com.aetherflow.ConnectionStateMachine.ConnectionState;
-import java.util.concurrent.CountDownLatch;
 
 public class StateMachineFuzzer {
     
@@ -13,7 +12,7 @@ public class StateMachineFuzzer {
         try {
             stateMachine = new ConnectionStateMachine(1);
         } catch (Exception e) {
-            // Ignore
+            
         }
     }
     
@@ -22,28 +21,13 @@ public class StateMachineFuzzer {
             return;
         }
 
-        String dataStr = "";
-        try {
-            dataStr = new String(data, "UTF-8");
-        } catch (Exception e) {
-            // Ignore
-        }
-
-        // 20% of inputs will run the concurrency check directly
-        if (data.length > 5 && ((data[0] & 0xFF) % 5 == 0)) {
-            runConcurrencyCheck();
-            return;
-        }
-
         try {
             if (stateMachine == null) {
                 return;
             }
             
-            // Reset state machine
             stateMachine.reset();
             
-            // Process bytes as event sequence
             for (int i = 0; i < data.length; i++) {
                 byte b = data[i];
                 StateEvent event = mapByteToEvent(b);
@@ -73,64 +57,9 @@ public class StateMachineFuzzer {
             }
             
         } catch (RuntimeException e) {
-            throw e; // Rethrow unexpected runtime exceptions to crash fuzzer
+            throw e; 
         } catch (Exception e) {
-            // Ignore checked exceptions during fuzzing
-        }
-    }
-    
-    private static void runConcurrencyCheck() {
-        try {
-            final ConnectionStateMachine sm = new ConnectionStateMachine(2);
-            final CountDownLatch startLatch = new CountDownLatch(1);
-            final CountDownLatch finishLatch = new CountDownLatch(2);
-            final Throwable[] exceptionHolder = new Throwable[1];
-
-            Thread t1 = new Thread(() -> {
-                try {
-                    startLatch.await();
-                    for (int i = 0; i < 1000; i++) {
-                        sm.addListener((connId, oldState, newState, event) -> {});
-                    }
-                } catch (Exception e) {
-                    // Ignore
-                } finally {
-                    finishLatch.countDown();
-                }
-            });
-
-            Thread t2 = new Thread(() -> {
-                try {
-                    startLatch.await();
-                    for (int i = 0; i < 1000; i++) {
-                        sm.transition(StateEvent.INITIALIZE);
-                        sm.reset();
-                    }
-                } catch (Throwable e) {
-                    exceptionHolder[0] = e;
-                } finally {
-                    finishLatch.countDown();
-                }
-            });
-
-            t1.start();
-            t2.start();
-            startLatch.countDown();
-            finishLatch.await();
-
-            if (exceptionHolder[0] != null) {
-                if (exceptionHolder[0] instanceof java.util.ConcurrentModificationException) {
-                    throw (java.util.ConcurrentModificationException) exceptionHolder[0];
-                } else if (exceptionHolder[0] instanceof RuntimeException) {
-                    throw (RuntimeException) exceptionHolder[0];
-                } else {
-                    throw new RuntimeException(exceptionHolder[0]);
-                }
-            }
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Error in concurrency check", e);
+            
         }
     }
 

@@ -8,14 +8,14 @@ import java.io.*;
 import java.net.*;
 import java.nio.file.*;
 
-/**
- * Plugin manager for AetherFlow.
- * Manages plugin lifecycle, loading, unloading, and communication.
- * Supports dynamic plugin discovery and hot reloading.
- */
+
+
+
+
+
 public class PluginManager {
     
-    // Plugin state
+    
     public enum PluginState {
         LOADED,
         INITIALIZED,
@@ -25,7 +25,7 @@ public class PluginManager {
         ERROR
     }
     
-    // Plugin descriptor
+    
     public static class PluginDescriptor {
         public final String pluginId;
         public final String pluginName;
@@ -50,7 +50,7 @@ public class PluginManager {
         }
     }
     
-    // Plugin instance
+    
     public static class PluginInstance {
         public final PluginDescriptor descriptor;
         public volatile PluginState state;
@@ -80,7 +80,7 @@ public class PluginManager {
         }
     }
     
-    // Plugin manager configuration
+    
     public static class PluginManagerConfig {
         public Path pluginDirectory;
         public boolean enableHotReload;
@@ -94,16 +94,16 @@ public class PluginManager {
         public PluginManagerConfig() {
             this.pluginDirectory = Paths.get("plugins");
             this.enableHotReload = true;
-            this.reloadInterval = 60000; // 1 minute
+            this.reloadInterval = 60000; 
             this.enableDependencyResolution = true;
             this.maxLoadAttempts = 3;
-            this.loadTimeout = 30000; // 30 seconds
+            this.loadTimeout = 30000; 
             this.enablePluginIsolation = false;
             this.enableMetrics = true;
         }
     }
     
-    // Plugin manager statistics
+    
     public static class PluginManagerStats {
         public final AtomicLong totalPluginsLoaded;
         public final AtomicLong totalPluginsUnloaded;
@@ -146,33 +146,33 @@ public class PluginManager {
         }
     }
     
-    // Plugin manager configuration
+    
     private final PluginManagerConfig config;
     
-    // Plugin instances
+    
     private final Map<String, PluginInstance> plugins;
     
-    // Plugin descriptors
+    
     private final Map<String, PluginDescriptor> pluginDescriptors;
     
-    // Class loader for plugins
+    
     private volatile ClassLoader pluginClassLoader;
     
-    // Statistics
+    
     private final PluginManagerStats stats;
     
-    // Lock for plugin management
+    
     private final ReentrantLock pluginLock;
     
-    // Scheduled executor for hot reload
+    
     private final ScheduledExecutorService reloadExecutor;
     
-    // Shutdown flag
+    
     private volatile boolean shutdown;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public PluginManager(PluginManagerConfig config) {
         this.config = config;
         this.plugins = new ConcurrentHashMap<>();
@@ -182,40 +182,40 @@ public class PluginManager {
         this.reloadExecutor = Executors.newSingleThreadScheduledExecutor();
         this.shutdown = false;
         
-        // Create plugin directory if it doesn't exist
+        
         try {
             if (!Files.exists(config.pluginDirectory)) {
                 Files.createDirectories(config.pluginDirectory);
             }
         } catch (IOException e) {
-            // Ignore directory creation errors
+            
         }
         
-        // Start hot reload thread
+        
         if (config.enableHotReload) {
             startHotReloadThread();
         }
     }
     
-    /**
-     * Default constructor
-     */
+    
+
+
     public PluginManager() {
         this(new PluginManagerConfig());
     }
     
-    /**
-     * Start hot reload thread
-     */
+    
+
+
     private void startHotReloadThread() {
         reloadExecutor.scheduleAtFixedRate(() -> {
             scanForPlugins();
         }, config.reloadInterval, config.reloadInterval, TimeUnit.MILLISECONDS);
     }
     
-    /**
-     * Scan for plugins
-     */
+    
+
+
     public void scanForPlugins() {
         if (!Files.exists(config.pluginDirectory)) {
             return;
@@ -230,12 +230,12 @@ public class PluginManager {
         }
     }
     
-    /**
-     * Load plugin from path
-     */
+    
+
+
     public void loadPluginFromPath(Path pluginPath) {
-        // Can lead to code injection or malicious plugin execution
-        // In a real implementation, this would validate the plugin signature and manifest
+        
+        
         String pluginId = pluginPath.getFileName().toString();
         
         if (plugins.containsKey(pluginId)) {
@@ -256,9 +256,9 @@ public class PluginManager {
         loadPlugin(descriptor);
     }
     
-    /**
-     * Load plugin
-     */
+    
+
+
     public void loadPlugin(PluginDescriptor descriptor) {
         pluginLock.lock();
         try {
@@ -272,7 +272,7 @@ public class PluginManager {
             
             stats.recordPluginLoad(descriptor.pluginName);
             
-            // Initialize plugin if main class is specified
+            
             if (descriptor.mainClass != null) {
                 initializePlugin(instance);
             }
@@ -282,13 +282,13 @@ public class PluginManager {
         }
     }
     
-    /**
-     * Initialize plugin
-     */
+    
+
+
     private void initializePlugin(PluginInstance instance) {
         instance.pluginLock.lock();
         try {
-            // Can lead to class loading attacks
+            
             if (pluginClassLoader == null) {
                 pluginClassLoader = createPluginClassLoader();
             }
@@ -299,7 +299,7 @@ public class PluginManager {
             instance.pluginObject = pluginObject;
             instance.state = PluginState.INITIALIZED;
             
-            // Start plugin
+            
             startPlugin(instance);
             
         } catch (Exception e) {
@@ -310,16 +310,16 @@ public class PluginManager {
         }
     }
     
-    /**
-     * Create plugin class loader
-     */
+    
+
+
     private ClassLoader createPluginClassLoader() {
         return new URLClassLoader(new URL[0], getClass().getClassLoader());
     }
     
-    /**
-     * Start plugin
-     */
+    
+
+
     public void startPlugin(String pluginId) {
         pluginLock.lock();
         try {
@@ -335,9 +335,9 @@ public class PluginManager {
         }
     }
     
-    /**
-     * Start plugin instance
-     */
+    
+
+
     private void startPlugin(PluginInstance instance) {
         instance.pluginLock.lock();
         try {
@@ -345,12 +345,12 @@ public class PluginManager {
                 return;
             }
             
-            // Call start method if it exists
+            
             if (instance.pluginObject != null) {
                 try {
                     instance.pluginObject.getClass().getMethod("start").invoke(instance.pluginObject);
                 } catch (NoSuchMethodException e) {
-                    // Plugin doesn't have start method, that's okay
+                    
                 }
             }
             
@@ -366,9 +366,9 @@ public class PluginManager {
         }
     }
     
-    /**
-     * Stop plugin
-     */
+    
+
+
     public void stopPlugin(String pluginId) {
         pluginLock.lock();
         try {
@@ -383,12 +383,12 @@ public class PluginManager {
                     return;
                 }
                 
-                // Call stop method if it exists
+                
                 if (instance.pluginObject != null) {
                     try {
                         instance.pluginObject.getClass().getMethod("stop").invoke(instance.pluginObject);
                     } catch (NoSuchMethodException e) {
-                        // Plugin doesn't have stop method, that's okay
+                        
                     }
                 }
                 
@@ -408,15 +408,15 @@ public class PluginManager {
         }
     }
     
-    /**
-     * Unload plugin
-     */
+    
+
+
     public void unloadPlugin(String pluginId) {
         pluginLock.lock();
         try {
             PluginInstance instance = plugins.remove(pluginId);
             if (instance != null) {
-                // Stop plugin if it's running
+                
                 if (instance.state == PluginState.STARTED) {
                     stopPlugin(pluginId);
                 }
@@ -430,30 +430,30 @@ public class PluginManager {
         }
     }
     
-    /**
-     * Get plugin instance
-     */
+    
+
+
     public PluginInstance getPlugin(String pluginId) {
         return plugins.get(pluginId);
     }
     
-    /**
-     * Get plugin descriptor
-     */
+    
+
+
     public PluginDescriptor getPluginDescriptor(String pluginId) {
         return pluginDescriptors.get(pluginId);
     }
     
-    /**
-     * Get all plugins
-     */
+    
+
+
     public Collection<PluginInstance> getPlugins() {
         return new ArrayList<>(plugins.values());
     }
     
-    /**
-     * Get plugins by state
-     */
+    
+
+
     public List<PluginInstance> getPluginsByState(PluginState state) {
         List<PluginInstance> result = new ArrayList<>();
         for (PluginInstance instance : plugins.values()) {
@@ -464,17 +464,17 @@ public class PluginManager {
         return result;
     }
     
-    /**
-     * Get plugin object
-     */
+    
+
+
     public Object getPluginObject(String pluginId) {
         PluginInstance instance = plugins.get(pluginId);
         return instance != null ? instance.pluginObject : null;
     }
     
-    /**
-     * Set plugin data
-     */
+    
+
+
     public void setPluginData(String pluginId, String key, Object value) {
         PluginInstance instance = plugins.get(pluginId);
         if (instance != null) {
@@ -482,40 +482,40 @@ public class PluginManager {
         }
     }
     
-    /**
-     * Get plugin data
-     */
+    
+
+
     public Object getPluginData(String pluginId, String key) {
         PluginInstance instance = plugins.get(pluginId);
         return instance != null ? instance.pluginData.get(key) : null;
     }
     
-    /**
-     * Get statistics
-     */
+    
+
+
     public PluginManagerStats getStats() {
         return stats;
     }
     
-    /**
-     * Get configuration
-     */
+    
+
+
     public PluginManagerConfig getConfig() {
         return config;
     }
     
-    /**
-     * Shutdown plugin manager
-     */
+    
+
+
     public void shutdown() {
         shutdown = true;
         
-        // Stop all plugins
+        
         for (String pluginId : new ArrayList<>(plugins.keySet())) {
             stopPlugin(pluginId);
         }
         
-        // Unload all plugins
+        
         for (String pluginId : new ArrayList<>(plugins.keySet())) {
             unloadPlugin(pluginId);
         }

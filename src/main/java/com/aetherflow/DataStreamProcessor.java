@@ -7,14 +7,14 @@ import java.util.concurrent.locks.*;
 import java.util.function.*;
 import java.nio.ByteBuffer;
 
-/**
- * Data stream processor for AetherFlow.
- * Handles streaming data processing, transformation, and aggregation.
- * Supports windowing, filtering, mapping, and complex stream operations.
- */
+
+
+
+
+
 public class DataStreamProcessor {
     
-    // Stream operation types
+    
     public enum StreamOperation {
         MAP,
         FILTER,
@@ -28,7 +28,7 @@ public class DataStreamProcessor {
         LIMIT
     }
     
-    // Stream window
+    
     public static class StreamWindow {
         public final long size;
         public final long slide;
@@ -55,7 +55,7 @@ public class DataStreamProcessor {
         }
     }
     
-    // Stream data
+    
     public static class StreamData {
         public final byte[] data;
         public final long timestamp;
@@ -74,7 +74,7 @@ public class DataStreamProcessor {
         }
     }
     
-    // Stream result
+    
     public static class StreamResult {
         public final byte[] result;
         public final long processingTime;
@@ -90,7 +90,7 @@ public class DataStreamProcessor {
         }
     }
     
-    // Processor configuration
+    
     public static class ProcessorConfig {
         public int bufferSize;
         public int maxConcurrentStreams;
@@ -111,7 +111,7 @@ public class DataStreamProcessor {
         }
     }
     
-    // Processor statistics
+    
     public static class ProcessorStats {
         public final AtomicLong totalProcessed;
         public final AtomicLong totalBytesProcessed;
@@ -142,7 +142,7 @@ public class DataStreamProcessor {
         }
     }
     
-    // Stream pipeline
+    
     public static class StreamPipeline {
         public final String pipelineId;
         public final List<StreamOperation> operations;
@@ -171,30 +171,30 @@ public class DataStreamProcessor {
         }
     }
     
-    // Processor configuration
+    
     private final ProcessorConfig config;
     
-    // Active pipelines
+    
     private final Map<String, StreamPipeline> pipelines;
     
-    // Stream data queues
+    
     private final Map<String, BlockingQueue<StreamData>> streamQueues;
     
-    // Worker threads
+    
     private final ExecutorService workerExecutor;
     
-    // Statistics
+    
     private final ProcessorStats stats;
     
-    // Lock for pipeline management
+    
     private final ReentrantLock pipelineLock;
     
-    // Shutdown flag
+    
     private volatile boolean shutdown;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public DataStreamProcessor(ProcessorConfig config) {
         this.config = config;
         this.pipelines = new ConcurrentHashMap<>();
@@ -205,16 +205,16 @@ public class DataStreamProcessor {
         this.shutdown = false;
     }
     
-    /**
-     * Default constructor
-     */
+    
+
+
     public DataStreamProcessor() {
         this(new ProcessorConfig());
     }
     
-    /**
-     * Create stream pipeline
-     */
+    
+
+
     public StreamPipeline createPipeline(String pipelineId) {
         pipelineLock.lock();
         try {
@@ -223,7 +223,7 @@ public class DataStreamProcessor {
             streamQueues.put(pipelineId, new LinkedBlockingQueue<>(config.bufferSize));
             stats.activeStreams.incrementAndGet();
             
-            // Start processing thread for this pipeline
+            
             startPipelineProcessor(pipelineId);
             
             return pipeline;
@@ -232,9 +232,9 @@ public class DataStreamProcessor {
         }
     }
     
-    /**
-     * Start pipeline processor
-     */
+    
+
+
     private void startPipelineProcessor(String pipelineId) {
         workerExecutor.submit(() -> {
             BlockingQueue<StreamData> queue = streamQueues.get(pipelineId);
@@ -257,9 +257,9 @@ public class DataStreamProcessor {
         });
     }
     
-    /**
-     * Process stream data
-     */
+    
+
+
     private StreamResult processStreamData(String pipelineId, StreamData data) {
         StreamPipeline pipeline = pipelines.get(pipelineId);
         if (pipeline == null || !pipeline.active) {
@@ -281,7 +281,7 @@ public class DataStreamProcessor {
             stats.totalProcessed.incrementAndGet();
             stats.totalBytesProcessed.addAndGet(currentData.length);
             
-            // Update average processing time
+            
             long currentAvg = stats.averageProcessingTime.get();
             long newAvg = (currentAvg * (stats.totalProcessed.get() - 1) + processingTime) / 
                           stats.totalProcessed.get();
@@ -303,9 +303,9 @@ public class DataStreamProcessor {
         }
     }
     
-    /**
-     * Apply stream operation
-     */
+    
+
+
     private byte[] applyOperation(StreamOperation operation, byte[] data, 
                                   Map<String, Object> parameters) {
         switch (operation) {
@@ -334,9 +334,9 @@ public class DataStreamProcessor {
         }
     }
     
-    /**
-     * Apply map operation
-     */
+    
+
+
     private byte[] applyMapOperation(byte[] data, Map<String, Object> parameters) {
         String transformation = (String) parameters.getOrDefault("transform", "identity");
         
@@ -362,9 +362,9 @@ public class DataStreamProcessor {
         return data;
     }
     
-    /**
-     * Apply filter operation
-     */
+    
+
+
     private byte[] applyFilterOperation(byte[] data, Map<String, Object> parameters) {
         String pattern = (String) parameters.getOrDefault("pattern", "");
         String dataStr = new String(data);
@@ -376,9 +376,9 @@ public class DataStreamProcessor {
         return new byte[0];
     }
     
-    /**
-     * Apply reduce operation
-     */
+    
+
+
     private byte[] applyReduceOperation(byte[] data, Map<String, Object> parameters) {
         String operation = (String) parameters.getOrDefault("operation", "sum");
         
@@ -405,9 +405,9 @@ public class DataStreamProcessor {
         return data;
     }
     
-    /**
-     * Apply aggregate operation
-     */
+    
+
+
     private byte[] applyAggregateOperation(byte[] data, Map<String, Object> parameters) {
         String aggType = (String) parameters.getOrDefault("type", "count");
         
@@ -435,21 +435,21 @@ public class DataStreamProcessor {
         return data;
     }
     
-    /**
-     * Apply window operation
-     */
+    
+
+
     private byte[] applyWindowOperation(byte[] data, Map<String, Object> parameters) {
         long windowSize = (long) parameters.getOrDefault("windowSize", 1000);
         long windowSlide = (long) parameters.getOrDefault("windowSlide", 500);
         
-        // For simplicity, just return the data
-        // In a real implementation, this would maintain window state
+        
+        
         return data;
     }
     
-    /**
-     * Apply join operation
-     */
+    
+
+
     private byte[] applyJoinOperation(byte[] data, Map<String, Object> parameters) {
         String separator = (String) parameters.getOrDefault("separator", ",");
         byte[] otherData = (byte[]) parameters.get("otherData");
@@ -465,20 +465,20 @@ public class DataStreamProcessor {
         return data;
     }
     
-    /**
-     * Apply group by operation
-     */
+    
+
+
     private byte[] applyGroupByOperation(byte[] data, Map<String, Object> parameters) {
         String keyFunction = (String) parameters.getOrDefault("keyFunction", "identity");
         
-        // For simplicity, just return the data
-        // In a real implementation, this would group data by keys
+        
+        
         return data;
     }
     
-    /**
-     * Apply sort operation
-     */
+    
+
+
     private byte[] applySortOperation(byte[] data, Map<String, Object> parameters) {
         boolean ascending = (boolean) parameters.getOrDefault("ascending", true);
         
@@ -496,9 +496,9 @@ public class DataStreamProcessor {
         return sorted;
     }
     
-    /**
-     * Apply distinct operation
-     */
+    
+
+
     private byte[] applyDistinctOperation(byte[] data, Map<String, Object> parameters) {
         Set<Byte> distinct = new HashSet<>();
         for (byte b : data) {
@@ -514,9 +514,9 @@ public class DataStreamProcessor {
         return result;
     }
     
-    /**
-     * Apply limit operation
-     */
+    
+
+
     private byte[] applyLimitOperation(byte[] data, Map<String, Object> parameters) {
         int limit = (int) parameters.getOrDefault("limit", data.length);
         
@@ -527,16 +527,16 @@ public class DataStreamProcessor {
         return Arrays.copyOf(data, limit);
     }
     
-    /**
-     * Submit data to stream
-     */
+    
+
+
     public boolean submitData(String pipelineId, byte[] data) {
         return submitData(pipelineId, data, null);
     }
     
-    /**
-     * Submit data to stream with metadata
-     */
+    
+
+
     public boolean submitData(String pipelineId, byte[] data, Map<String, Object> metadata) {
         BlockingQueue<StreamData> queue = streamQueues.get(pipelineId);
         if (queue == null) {
@@ -561,23 +561,23 @@ public class DataStreamProcessor {
         }
     }
     
-    /**
-     * Get pipeline
-     */
+    
+
+
     public StreamPipeline getPipeline(String pipelineId) {
         return pipelines.get(pipelineId);
     }
     
-    /**
-     * Get all pipelines
-     */
+    
+
+
     public Collection<StreamPipeline> getPipelines() {
         return new ArrayList<>(pipelines.values());
     }
     
-    /**
-     * Remove pipeline
-     */
+    
+
+
     public void removePipeline(String pipelineId) {
         pipelineLock.lock();
         try {
@@ -592,27 +592,27 @@ public class DataStreamProcessor {
         }
     }
     
-    /**
-     * Get statistics
-     */
+    
+
+
     public ProcessorStats getStats() {
         return stats;
     }
     
-    /**
-     * Get configuration
-     */
+    
+
+
     public ProcessorConfig getConfig() {
         return config;
     }
     
-    /**
-     * Shutdown processor
-     */
+    
+
+
     public void shutdown() {
         shutdown = true;
         
-        // Deactivate all pipelines
+        
         for (StreamPipeline pipeline : pipelines.values()) {
             pipeline.active = false;
         }

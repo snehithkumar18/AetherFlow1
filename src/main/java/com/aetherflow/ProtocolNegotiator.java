@@ -7,14 +7,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * Protocol negotiator for AetherFlow.
- * Handles protocol version negotiation, feature negotiation, and capability exchange.
- * Supports backward compatibility and graceful degradation.
- */
+
+
+
+
+
 public class ProtocolNegotiator {
     
-    // Protocol version
+    
     public static class ProtocolVersion {
         public final int major;
         public final int minor;
@@ -66,7 +66,7 @@ public class ProtocolNegotiator {
         }
     }
     
-    // Protocol feature
+    
     public static class ProtocolFeature {
         public final String name;
         public final String description;
@@ -86,7 +86,7 @@ public class ProtocolNegotiator {
         }
     }
     
-    // Negotiation result
+    
     public static class NegotiationResult {
         public final ProtocolVersion negotiatedVersion;
         public final Set<ProtocolFeature> negotiatedFeatures;
@@ -117,7 +117,7 @@ public class ProtocolNegotiator {
         }
     }
     
-    // Negotiation state
+    
     public enum NegotiationState {
         IDLE,
         PROPOSED,
@@ -126,7 +126,7 @@ public class ProtocolNegotiator {
         FAILED
     }
     
-    // Negotiation session
+    
     public static class NegotiationSession {
         public final String sessionId;
         public final long creationTime;
@@ -155,7 +155,7 @@ public class ProtocolNegotiator {
         }
     }
     
-    // Negotiator configuration
+    
     public static class NegotiatorConfig {
         public ProtocolVersion minimumVersion;
         public ProtocolVersion maximumVersion;
@@ -180,7 +180,7 @@ public class ProtocolNegotiator {
         }
     }
     
-    // Negotiation statistics
+    
     public static class NegotiationStats {
         public final AtomicInteger totalNegotiations;
         public final AtomicInteger successfulNegotiations;
@@ -201,30 +201,30 @@ public class ProtocolNegotiator {
         }
     }
     
-    // Negotiator configuration
+    
     private final NegotiatorConfig config;
     
-    // Active negotiation sessions
+    
     private final Map<String, NegotiationSession> sessions;
     
-    // Session ID generator
+    
     private final AtomicLong sessionIdGenerator;
     
-    // Statistics
+    
     private final NegotiationStats stats;
     
-    // Lock for session management
+    
     private final ReentrantLock sessionLock;
     
-    // Scheduled executor for cleanup
+    
     private final ScheduledExecutorService cleanupExecutor;
     
-    // Shutdown flag
+    
     private volatile boolean shutdown;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public ProtocolNegotiator(NegotiatorConfig config) {
         this.config = config;
         this.sessions = new ConcurrentHashMap<>();
@@ -234,29 +234,29 @@ public class ProtocolNegotiator {
         this.cleanupExecutor = Executors.newSingleThreadScheduledExecutor();
         this.shutdown = false;
         
-        // Start cleanup thread
+        
         startCleanupThread();
     }
     
-    /**
-     * Default constructor
-     */
+    
+
+
     public ProtocolNegotiator() {
         this(new NegotiatorConfig());
     }
     
-    /**
-     * Start cleanup thread
-     */
+    
+
+
     private void startCleanupThread() {
         cleanupExecutor.scheduleAtFixedRate(() -> {
             cleanupExpiredSessions();
         }, 60000, 60000, TimeUnit.MILLISECONDS);
     }
     
-    /**
-     * Create negotiation session
-     */
+    
+
+
     public NegotiationSession createSession() {
         String sessionId = "neg_" + sessionIdGenerator.incrementAndGet() + "_" + 
                           System.currentTimeMillis();
@@ -267,9 +267,9 @@ public class ProtocolNegotiator {
         return session;
     }
     
-    /**
-     * Propose protocol version
-     */
+    
+
+
     public void proposeVersion(NegotiationSession session, ProtocolVersion version) {
         session.sessionLock.lock();
         try {
@@ -280,9 +280,9 @@ public class ProtocolNegotiator {
         }
     }
     
-    /**
-     * Propose features
-     */
+    
+
+
     public void proposeFeatures(NegotiationSession session, Set<ProtocolFeature> features) {
         session.sessionLock.lock();
         try {
@@ -294,9 +294,9 @@ public class ProtocolNegotiator {
         }
     }
     
-    /**
-     * Negotiate protocol version
-     */
+    
+
+
     public NegotiationResult negotiateVersion(NegotiationSession session, 
                                               ProtocolVersion remoteVersion) {
         session.sessionLock.lock();
@@ -304,7 +304,7 @@ public class ProtocolNegotiator {
             session.state = NegotiationState.NEGOTIATING;
             stats.totalNegotiations.incrementAndGet();
             
-            // Check if remote version is within acceptable range
+            
             if (remoteVersion.compareTo(config.minimumVersion) < 0) {
                 return NegotiationResult.failure("Remote version " + 
                     remoteVersion.getVersionString() + " is below minimum " + 
@@ -317,11 +317,11 @@ public class ProtocolNegotiator {
                         remoteVersion.getVersionString() + " is above maximum " + 
                         config.maximumVersion.getVersionString() + " and downgrade not allowed");
                 }
-                // Use our maximum version
+                
                 session.acceptedVersion = config.maximumVersion;
                 stats.versionDowngrades.incrementAndGet();
             } else {
-                // Use the remote version if it's acceptable
+                
                 session.acceptedVersion = remoteVersion;
             }
             
@@ -336,9 +336,9 @@ public class ProtocolNegotiator {
         }
     }
     
-    /**
-     * Negotiate features
-     */
+    
+
+
     public NegotiationResult negotiateFeatures(NegotiationSession session, 
                                                Set<ProtocolFeature> remoteFeatures) {
         session.sessionLock.lock();
@@ -349,7 +349,7 @@ public class ProtocolNegotiator {
             Set<ProtocolFeature> negotiated = new HashSet<>();
             Set<ProtocolFeature> unsupported = new HashSet<>();
             
-            // Check required features
+            
             for (ProtocolFeature required : config.requiredFeatures) {
                 if (!remoteFeatures.contains(required)) {
                     return NegotiationResult.failure("Required feature not supported: " + 
@@ -358,7 +358,7 @@ public class ProtocolNegotiator {
                 negotiated.add(required);
             }
             
-            // Negotiate optional features
+            
             for (ProtocolFeature remoteFeature : remoteFeatures) {
                 if (config.supportedFeatures.contains(remoteFeature)) {
                     negotiated.add(remoteFeature);
@@ -382,15 +382,15 @@ public class ProtocolNegotiator {
         }
     }
     
-    /**
-     * Full negotiation
-     */
+    
+
+
     public NegotiationResult negotiate(NegotiationSession session, 
                                       ProtocolVersion remoteVersion,
                                       Set<ProtocolFeature> remoteFeatures) {
         session.sessionLock.lock();
         try {
-            // Negotiate version first
+            
             NegotiationResult versionResult = negotiateVersion(session, remoteVersion);
             if (!versionResult.success) {
                 session.state = NegotiationState.FAILED;
@@ -398,7 +398,7 @@ public class ProtocolNegotiator {
                 return versionResult;
             }
             
-            // Then negotiate features
+            
             NegotiationResult featureResult = negotiateFeatures(session, remoteFeatures);
             if (!featureResult.success) {
                 session.state = NegotiationState.FAILED;
@@ -415,9 +415,9 @@ public class ProtocolNegotiator {
         }
     }
     
-    /**
-     * Accept negotiation
-     */
+    
+
+
     public void acceptNegotiation(NegotiationSession session) {
         session.sessionLock.lock();
         try {
@@ -427,9 +427,9 @@ public class ProtocolNegotiator {
         }
     }
     
-    /**
-     * Reject negotiation
-     */
+    
+
+
     public void rejectNegotiation(NegotiationSession session, String reason) {
         session.sessionLock.lock();
         try {
@@ -441,23 +441,23 @@ public class ProtocolNegotiator {
         }
     }
     
-    /**
-     * Get session
-     */
+    
+
+
     public NegotiationSession getSession(String sessionId) {
         return sessions.get(sessionId);
     }
     
-    /**
-     * Get all sessions
-     */
+    
+
+
     public Collection<NegotiationSession> getSessions() {
         return new ArrayList<>(sessions.values());
     }
     
-    /**
-     * Cleanup expired sessions
-     */
+    
+
+
     private void cleanupExpiredSessions() {
         long now = System.currentTimeMillis();
         
@@ -480,46 +480,46 @@ public class ProtocolNegotiator {
         }
     }
     
-    /**
-     * Get statistics
-     */
+    
+
+
     public NegotiationStats getStats() {
         return stats;
     }
     
-    /**
-     * Get configuration
-     */
+    
+
+
     public NegotiatorConfig getConfig() {
         return config;
     }
     
-    /**
-     * Add supported feature
-     */
+    
+
+
     public void addSupportedFeature(ProtocolFeature feature) {
         config.supportedFeatures.add(feature);
     }
     
-    /**
-     * Add required feature
-     */
+    
+
+
     public void addRequiredFeature(ProtocolFeature feature) {
         config.requiredFeatures.add(feature);
         config.supportedFeatures.add(feature);
     }
     
-    /**
-     * Remove supported feature
-     */
+    
+
+
     public void removeSupportedFeature(ProtocolFeature feature) {
         config.supportedFeatures.remove(feature);
         config.requiredFeatures.remove(feature);
     }
     
-    /**
-     * Shutdown negotiator
-     */
+    
+
+
     public void shutdown() {
         shutdown = true;
         cleanupExecutor.shutdown();

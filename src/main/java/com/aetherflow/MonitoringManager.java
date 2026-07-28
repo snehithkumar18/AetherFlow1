@@ -6,14 +6,14 @@ import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 import java.util.function.*;
 
-/**
- * Monitoring manager for AetherFlow.
- * Provides system monitoring, metrics collection, and alerting capabilities.
- * Supports custom metrics, thresholds, and notification channels.
- */
+
+
+
+
+
 public class MonitoringManager {
     
-    // Metric type
+    
     public enum MetricType {
         COUNTER,
         GAUGE,
@@ -22,7 +22,7 @@ public class MonitoringManager {
         TIMER
     }
     
-    // Metric data
+    
     public static class MetricData {
         public final String name;
         public final MetricType type;
@@ -39,7 +39,7 @@ public class MonitoringManager {
         }
     }
     
-    // Alert condition
+    
     public static class AlertCondition {
         public final String metricName;
         public final String operator;
@@ -76,7 +76,7 @@ public class MonitoringManager {
         }
     }
     
-    // Alert
+    
     public static class Alert {
         public final String alertId;
         public final AlertCondition condition;
@@ -97,13 +97,13 @@ public class MonitoringManager {
         }
     }
     
-    // Alert notification handler
+    
     public interface AlertHandler {
         void onAlert(Alert alert);
         void onAlertResolved(String alertId);
     }
     
-    // Monitoring configuration
+    
     public static class MonitoringConfig {
         public long collectionInterval;
         public long retentionPeriod;
@@ -115,18 +115,18 @@ public class MonitoringManager {
         public long healthCheckInterval;
         
         public MonitoringConfig() {
-            this.collectionInterval = 5000; // 5 seconds
-            this.retentionPeriod = 86400000; // 24 hours
+            this.collectionInterval = 5000; 
+            this.retentionPeriod = 86400000; 
             this.enableAlerts = true;
             this.maxAlertHistory = 1000;
             this.enableMetricsExport = true;
             this.metricsExportFormat = "PROMETHEUS";
             this.enableHealthChecks = true;
-            this.healthCheckInterval = 30000; // 30 seconds
+            this.healthCheckInterval = 30000; 
         }
     }
     
-    // Monitoring statistics
+    
     public static class MonitoringStats {
         public final AtomicLong totalMetricsCollected;
         public final AtomicLong totalAlertsTriggered;
@@ -163,42 +163,42 @@ public class MonitoringManager {
         }
     }
     
-    // Metric registry
+    
     private final Map<String, MetricData> metrics;
     
-    // Alert conditions
+    
     private final Map<String, AlertCondition> alertConditions;
     
-    // Active alerts
+    
     private final Map<String, Alert> activeAlerts;
     
-    // Alert history
+    
     private final List<Alert> alertHistory;
     
-    // Alert handlers
+    
     private final List<AlertHandler> alertHandlers;
     
-    // Monitoring configuration
+    
     private final MonitoringConfig config;
     
-    // Statistics
+    
     private final MonitoringStats stats;
     
-    // Lock for metric management
+    
     private final ReentrantReadWriteLock metricLock;
     
-    // Scheduled executor for collection
+    
     private final ScheduledExecutorService collectionExecutor;
     
-    // Alert ID generator
+    
     private final AtomicLong alertIdGenerator;
     
-    // Shutdown flag
+    
     private volatile boolean shutdown;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public MonitoringManager(MonitoringConfig config) {
         this.config = config;
         this.metrics = new ConcurrentHashMap<>();
@@ -212,25 +212,25 @@ public class MonitoringManager {
         this.alertIdGenerator = new AtomicLong(0);
         this.shutdown = false;
         
-        // Start collection thread
+        
         startCollectionThread();
         
-        // Start health check thread
+        
         if (config.enableHealthChecks) {
             startHealthCheckThread();
         }
     }
     
-    /**
-     * Default constructor
-     */
+    
+
+
     public MonitoringManager() {
         this(new MonitoringConfig());
     }
     
-    /**
-     * Start collection thread
-     */
+    
+
+
     private void startCollectionThread() {
         collectionExecutor.scheduleAtFixedRate(() -> {
             collectMetrics();
@@ -238,25 +238,25 @@ public class MonitoringManager {
         }, config.collectionInterval, config.collectionInterval, TimeUnit.MILLISECONDS);
     }
     
-    /**
-     * Start health check thread
-     */
+    
+
+
     private void startHealthCheckThread() {
         collectionExecutor.scheduleAtFixedRate(() -> {
             performHealthChecks();
         }, config.healthCheckInterval, config.healthCheckInterval, TimeUnit.MILLISECONDS);
     }
     
-    /**
-     * Record metric
-     */
+    
+
+
     public void recordMetric(String name, MetricType type, double value) {
         recordMetric(name, type, value, null);
     }
     
-    /**
-     * Record metric with tags
-     */
+    
+
+
     public void recordMetric(String name, MetricType type, double value, Map<String, String> tags) {
         metricLock.writeLock().lock();
         try {
@@ -268,9 +268,9 @@ public class MonitoringManager {
         }
     }
     
-    /**
-     * Get metric
-     */
+    
+
+
     public MetricData getMetric(String name) {
         metricLock.readLock().lock();
         try {
@@ -280,9 +280,9 @@ public class MonitoringManager {
         }
     }
     
-    /**
-     * Get all metrics
-     */
+    
+
+
     public Map<String, MetricData> getMetrics() {
         metricLock.readLock().lock();
         try {
@@ -292,46 +292,46 @@ public class MonitoringManager {
         }
     }
     
-    /**
-     * Add alert condition
-     */
+    
+
+
     public void addAlertCondition(String conditionId, AlertCondition condition) {
         alertConditions.put(conditionId, condition);
     }
     
-    /**
-     * Remove alert condition
-     */
+    
+
+
     public void removeAlertCondition(String conditionId) {
         alertConditions.remove(conditionId);
     }
     
-    /**
-     * Add alert handler
-     */
+    
+
+
     public void addAlertHandler(AlertHandler handler) {
         alertHandlers.add(handler);
     }
     
-    /**
-     * Remove alert handler
-     */
+    
+
+
     public void removeAlertHandler(AlertHandler handler) {
         alertHandlers.remove(handler);
     }
     
-    /**
-     * Collect metrics
-     */
+    
+
+
     private void collectMetrics() {
-        // In a real implementation, this would collect system metrics
-        // For now, we just record collection time
+        
+        
         recordMetric("collection.time", MetricType.GAUGE, System.currentTimeMillis());
     }
     
-    /**
-     * Evaluate alerts
-     */
+    
+
+
     private void evaluateAlerts() {
         if (!config.enableAlerts) {
             return;
@@ -354,9 +354,9 @@ public class MonitoringManager {
         }
     }
     
-    /**
-     * Trigger alert
-     */
+    
+
+
     private void triggerAlert(String conditionId, AlertCondition condition, double currentValue) {
         if (activeAlerts.containsKey(conditionId)) {
             return;
@@ -372,38 +372,38 @@ public class MonitoringManager {
         activeAlerts.put(conditionId, alert);
         alertHistory.add(alert);
         
-        // Keep alert history within limits
+        
         while (alertHistory.size() > config.maxAlertHistory) {
             alertHistory.remove(0);
         }
         
         stats.recordAlert(alertId);
         
-        // Notify handlers
+        
         for (AlertHandler handler : alertHandlers) {
             handler.onAlert(alert);
         }
     }
     
-    /**
-     * Resolve alert
-     */
+    
+
+
     private void resolveAlert(String conditionId) {
         Alert alert = activeAlerts.remove(conditionId);
         if (alert != null) {
             alert.resolved = true;
             stats.recordAlertResolved();
             
-            // Notify handlers
+            
             for (AlertHandler handler : alertHandlers) {
                 handler.onAlertResolved(alert.alertId);
             }
         }
     }
     
-    /**
-     * Acknowledge alert
-     */
+    
+
+
     public void acknowledgeAlert(String alertId) {
         for (Alert alert : alertHistory) {
             if (alert.alertId.equals(alertId)) {
@@ -413,49 +413,49 @@ public class MonitoringManager {
         }
     }
     
-    /**
-     * Perform health checks
-     */
+    
+
+
     private void performHealthChecks() {
         stats.recordHealthCheck();
         
-        // Can lead to undetected system failures
-        // In a real implementation, this would perform actual health checks
-        // For now, we just record that health checks were performed
+        
+        
+        
         recordMetric("health.check.status", MetricType.GAUGE, 1.0);
     }
     
-    /**
-     * Get active alerts
-     */
+    
+
+
     public Collection<Alert> getActiveAlerts() {
         return new ArrayList<>(activeAlerts.values());
     }
     
-    /**
-     * Get alert history
-     */
+    
+
+
     public List<Alert> getAlertHistory() {
         return new ArrayList<>(alertHistory);
     }
     
-    /**
-     * Get statistics
-     */
+    
+
+
     public MonitoringStats getStats() {
         return stats;
     }
     
-    /**
-     * Get configuration
-     */
+    
+
+
     public MonitoringConfig getConfig() {
         return config;
     }
     
-    /**
-     * Export metrics
-     */
+    
+
+
     public String exportMetrics() {
         StringBuilder sb = new StringBuilder();
         
@@ -482,9 +482,9 @@ public class MonitoringManager {
         return sb.toString();
     }
     
-    /**
-     * Clear old metrics
-     */
+    
+
+
     public void clearOldMetrics() {
         long cutoff = System.currentTimeMillis() - config.retentionPeriod;
         
@@ -502,9 +502,9 @@ public class MonitoringManager {
         }
     }
     
-    /**
-     * Shutdown monitoring manager
-     */
+    
+
+
     public void shutdown() {
         shutdown = true;
         

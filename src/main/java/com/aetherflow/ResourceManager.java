@@ -6,14 +6,14 @@ import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 import java.io.*;
 
-/**
- * Resource manager for AetherFlow.
- * Manages system resources including memory, CPU, file handles, and network connections.
- * Provides resource allocation, monitoring, and cleanup capabilities.
- */
+
+
+
+
+
 public class ResourceManager {
     
-    // Resource type
+    
     public enum ResourceType {
         MEMORY,
         CPU,
@@ -25,7 +25,7 @@ public class ResourceManager {
         CUSTOM
     }
     
-    // Resource allocation
+    
     public static class ResourceAllocation {
         public final String allocationId;
         public final ResourceType type;
@@ -63,7 +63,7 @@ public class ResourceManager {
         }
     }
     
-    // Resource pool
+    
     public static class ResourcePool {
         public final ResourceType type;
         public final long totalCapacity;
@@ -113,7 +113,7 @@ public class ResourceManager {
         }
     }
     
-    // Resource manager configuration
+    
     public static class ResourceManagerConfig {
         public long memoryCapacity;
         public long cpuCapacity;
@@ -132,23 +132,23 @@ public class ResourceManager {
         
         public ResourceManagerConfig() {
             this.memoryCapacity = Runtime.getRuntime().maxMemory();
-            this.cpuCapacity = 100; // Percentage
+            this.cpuCapacity = 100; 
             this.fileHandleCapacity = 10000;
             this.networkConnectionCapacity = 1000;
             this.threadCapacity = 500;
             this.socketCapacity = 1000;
-            this.bufferCapacity = 100 * 1024 * 1024; // 100MB
+            this.bufferCapacity = 100 * 1024 * 1024; 
             this.enableQuotas = true;
-            this.defaultQuota = memoryCapacity / 10; // 10% of total
-            this.allocationTimeout = 30000; // 30 seconds
+            this.defaultQuota = memoryCapacity / 10; 
+            this.allocationTimeout = 30000; 
             this.enableMonitoring = true;
-            this.monitoringInterval = 5000; // 5 seconds
+            this.monitoringInterval = 5000; 
             this.enableAutoCleanup = true;
-            this.cleanupInterval = 60000; // 1 minute
+            this.cleanupInterval = 60000; 
         }
     }
     
-    // Resource manager statistics
+    
     public static class ResourceManagerStats {
         public final AtomicLong totalAllocations;
         public final AtomicLong totalDeallocations;
@@ -200,33 +200,33 @@ public class ResourceManager {
         }
     }
     
-    // Resource manager configuration
+    
     private final ResourceManagerConfig config;
     
-    // Resource pools
+    
     private final Map<ResourceType, ResourcePool> resourcePools;
     
-    // Active allocations
+    
     private final Map<String, ResourceAllocation> allocations;
     
-    // Allocation ID generator
+    
     private final AtomicLong allocationIdGenerator;
     
-    // Statistics
+    
     private final ResourceManagerStats stats;
     
-    // Lock for allocation management
+    
     private final ReentrantLock allocationLock;
     
-    // Scheduled executor for monitoring and cleanup
+    
     private final ScheduledExecutorService scheduledExecutor;
     
-    // Shutdown flag
+    
     private volatile boolean shutdown;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public ResourceManager(ResourceManagerConfig config) {
         this.config = config;
         this.resourcePools = new ConcurrentHashMap<>();
@@ -237,10 +237,10 @@ public class ResourceManager {
         this.scheduledExecutor = Executors.newScheduledThreadPool(4);
         this.shutdown = false;
         
-        // Initialize resource pools
+        
         initializeResourcePools();
         
-        // Start monitoring and cleanup threads
+        
         if (config.enableMonitoring) {
             startMonitoringThread();
         }
@@ -250,16 +250,16 @@ public class ResourceManager {
         }
     }
     
-    /**
-     * Default constructor
-     */
+    
+
+
     public ResourceManager() {
         this(new ResourceManagerConfig());
     }
     
-    /**
-     * Initialize resource pools
-     */
+    
+
+
     private void initializeResourcePools() {
         resourcePools.put(ResourceType.MEMORY, 
             new ResourcePool(ResourceType.MEMORY, config.memoryCapacity, 
@@ -290,34 +290,34 @@ public class ResourceManager {
                           config.allocationTimeout, config.enableQuotas, config.defaultQuota));
     }
     
-    /**
-     * Start monitoring thread
-     */
+    
+
+
     private void startMonitoringThread() {
         scheduledExecutor.scheduleAtFixedRate(() -> {
             monitorResources();
         }, config.monitoringInterval, config.monitoringInterval, TimeUnit.MILLISECONDS);
     }
     
-    /**
-     * Start cleanup thread
-     */
+    
+
+
     private void startCleanupThread() {
         scheduledExecutor.scheduleAtFixedRate(() -> {
             cleanupExpiredAllocations();
         }, config.cleanupInterval, config.cleanupInterval, TimeUnit.MILLISECONDS);
     }
     
-    /**
-     * Allocate resource
-     */
+    
+
+
     public ResourceAllocation allocate(ResourceType type, long amount, String owner) {
         return allocate(type, amount, owner, null);
     }
     
-    /**
-     * Allocate resource with metadata
-     */
+    
+
+
     public ResourceAllocation allocate(ResourceType type, long amount, String owner, 
                                       Map<String, Object> metadata) {
         ResourcePool pool = resourcePools.get(type);
@@ -331,7 +331,7 @@ public class ResourceManager {
         
         allocationLock.lock();
         try {
-            // Check if allocation is possible
+            
             if (!pool.canAllocate(owner, amount)) {
                 if (!pool.hasCapacity(amount)) {
                     stats.recordAllocationFailure("Insufficient capacity");
@@ -342,31 +342,31 @@ public class ResourceManager {
                 throw new ResourceAllocationException("Cannot allocate resource: " + type);
             }
             
-            // The check and actual allocation are not atomic
-            // Multiple threads can allocate beyond capacity
+            
+            
             long currentAvailable = pool.available.get();
             if (currentAvailable < amount) {
                 stats.recordAllocationFailure("Race condition detected");
                 throw new ResourceAllocationException("Capacity exceeded due to race condition");
             }
             
-            // Perform allocation
+            
             pool.allocated.addAndGet(amount);
             pool.available.addAndGet(-amount);
             
-            // Update peak usage
+            
             long currentAllocated = pool.allocated.get();
             if (currentAllocated > pool.peakUsage.get()) {
                 pool.peakUsage.set(currentAllocated);
             }
             
-            // Update owner usage
+            
             if (pool.enableQuota) {
                 pool.ownerUsage.computeIfAbsent(owner, k -> new AtomicLong(0))
                               .addAndGet(amount);
             }
             
-            // Create allocation
+            
             ResourceAllocation allocation = new ResourceAllocation(allocationId, type, amount, 
                                                                    owner, metadata);
             allocations.put(allocationId, allocation);
@@ -380,9 +380,9 @@ public class ResourceManager {
         }
     }
     
-    /**
-     * Deallocate resource
-     */
+    
+
+
     public void deallocate(String allocationId) {
         allocationLock.lock();
         try {
@@ -398,7 +398,7 @@ public class ResourceManager {
                 pool.allocated.addAndGet(-allocation.amount);
                 pool.available.addAndGet(allocation.amount);
                 
-                // Update owner usage
+                
                 if (pool.enableQuota) {
                     AtomicLong ownerAllocated = pool.ownerUsage.get(allocation.owner);
                     if (ownerAllocated != null) {
@@ -414,23 +414,23 @@ public class ResourceManager {
         }
     }
     
-    /**
-     * Get allocation
-     */
+    
+
+
     public ResourceAllocation getAllocation(String allocationId) {
         return allocations.get(allocationId);
     }
     
-    /**
-     * Get all allocations
-     */
+    
+
+
     public Collection<ResourceAllocation> getAllocations() {
         return new ArrayList<>(allocations.values());
     }
     
-    /**
-     * Get allocations by owner
-     */
+    
+
+
     public List<ResourceAllocation> getAllocationsByOwner(String owner) {
         List<ResourceAllocation> ownerAllocations = new ArrayList<>();
         for (ResourceAllocation allocation : allocations.values()) {
@@ -441,9 +441,9 @@ public class ResourceManager {
         return ownerAllocations;
     }
     
-    /**
-     * Get allocations by type
-     */
+    
+
+
     public List<ResourceAllocation> getAllocationsByType(ResourceType type) {
         List<ResourceAllocation> typeAllocations = new ArrayList<>();
         for (ResourceAllocation allocation : allocations.values()) {
@@ -454,33 +454,33 @@ public class ResourceManager {
         return typeAllocations;
     }
     
-    /**
-     * Get resource pool
-     */
+    
+
+
     public ResourcePool getResourcePool(ResourceType type) {
         return resourcePools.get(type);
     }
     
-    /**
-     * Get all resource pools
-     */
+    
+
+
     public Map<ResourceType, ResourcePool> getResourcePools() {
         return new HashMap<>(resourcePools);
     }
     
-    /**
-     * Monitor resources
-     */
+    
+
+
     private void monitorResources() {
         for (ResourcePool pool : resourcePools.values()) {
             double utilization = pool.getUtilization();
             
-            // Log high utilization
+            
             if (utilization > 0.9) {
-                // In real implementation, would log warning
+                
             }
             
-            // Update allocation timestamps
+            
             for (ResourceAllocation allocation : allocations.values()) {
                 if (allocation.type == pool.type && allocation.active) {
                     allocation.recordUsage();
@@ -489,9 +489,9 @@ public class ResourceManager {
         }
     }
     
-    /**
-     * Cleanup expired allocations
-     */
+    
+
+
     private void cleanupExpiredAllocations() {
         long now = System.currentTimeMillis();
         
@@ -512,23 +512,23 @@ public class ResourceManager {
         }
     }
     
-    /**
-     * Get statistics
-     */
+    
+
+
     public ResourceManagerStats getStats() {
         return stats;
     }
     
-    /**
-     * Get configuration
-     */
+    
+
+
     public ResourceManagerConfig getConfig() {
         return config;
     }
     
-    /**
-     * Set quota for owner
-     */
+    
+
+
     public void setQuota(String owner, long quota) {
         for (ResourcePool pool : resourcePools.values()) {
             if (pool.enableQuota) {
@@ -537,16 +537,16 @@ public class ResourceManager {
         }
     }
     
-    /**
-     * Get quota for owner
-     */
+    
+
+
     public long getQuota(String owner) {
         return config.defaultQuota;
     }
     
-    /**
-     * Get usage for owner
-     */
+    
+
+
     public long getUsage(String owner) {
         long totalUsage = 0;
         for (ResourcePool pool : resourcePools.values()) {
@@ -560,13 +560,13 @@ public class ResourceManager {
         return totalUsage;
     }
     
-    /**
-     * Shutdown resource manager
-     */
+    
+
+
     public void shutdown() {
         shutdown = true;
         
-        // Deallocate all allocations
+        
         allocationLock.lock();
         try {
             for (String allocationId : new ArrayList<>(allocations.keySet())) {
@@ -576,7 +576,7 @@ public class ResourceManager {
             allocationLock.unlock();
         }
         
-        // Shutdown scheduled executor
+        
         scheduledExecutor.shutdown();
         try {
             scheduledExecutor.awaitTermination(5, TimeUnit.SECONDS);
@@ -588,9 +588,9 @@ public class ResourceManager {
         allocations.clear();
     }
     
-    /**
-     * Resource allocation exception
-     */
+    
+
+
     public static class ResourceAllocationException extends RuntimeException {
         public ResourceAllocationException(String message) {
             super(message);

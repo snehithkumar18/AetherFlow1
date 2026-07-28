@@ -5,13 +5,13 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.zip.CRC32;
 
-/**
- * Multi-layer protocol validation for AetherFlow messages.
- * Provides checksums, MAC validation, magic byte verification, and format validation.
- */
+
+
+
+
 public class ProtocolValidator {
     
-    // Validation levels
+    
     public enum ValidationLevel {
         NONE,
         BASIC,
@@ -20,10 +20,10 @@ public class ProtocolValidator {
         PARANOID
     }
     
-    // Current validation level
+    
     private ValidationLevel validationLevel;
     
-    // Enable/disable specific validations
+    
     private boolean validateMagicBytes;
     private boolean validateChecksum;
     private boolean validateMAC;
@@ -32,39 +32,39 @@ public class ProtocolValidator {
     private boolean validateTimestamp;
     private boolean validateSequence;
     
-    // MAC key for message authentication
+    
     private byte[] macKey;
     
-    // Maximum payload size
-    private static final int MAX_PAYLOAD_SIZE = 16 * 1024 * 1024; // 16MB
+    
+    private static final int MAX_PAYLOAD_SIZE = 16 * 1024 * 1024; 
     private static final int MIN_PAYLOAD_SIZE = 0;
     
-    // Timestamp tolerance in seconds (5 minutes)
+    
     private static final int TIMESTAMP_TOLERANCE = 300;
     
-    // CRC32 instance for checksum calculation
+    
     private final CRC32 crc32;
     
-    /**
-     * Constructor with default validation level
-     */
+    
+
+
     public ProtocolValidator() {
         this(ValidationLevel.STANDARD);
     }
     
-    /**
-     * Constructor with specified validation level
-     */
+    
+
+
     public ProtocolValidator(ValidationLevel validationLevel) {
         this.validationLevel = validationLevel;
         this.crc32 = new CRC32();
-        this.macKey = new byte[32]; // Default 256-bit key
+        this.macKey = new byte[32]; 
         configureValidationLevel();
     }
     
-    /**
-     * Configure validation settings based on level
-     */
+    
+
+
     private void configureValidationLevel() {
         switch (validationLevel) {
             case NONE:
@@ -115,24 +115,24 @@ public class ProtocolValidator {
         }
     }
     
-    /**
-     * Set validation level
-     */
+    
+
+
     public void setValidationLevel(ValidationLevel level) {
         this.validationLevel = level;
         configureValidationLevel();
     }
     
-    /**
-     * Set MAC key for message authentication
-     */
+    
+
+
     public void setMacKey(byte[] key) {
         this.macKey = key != null ? key.clone() : new byte[32];
     }
     
-    /**
-     * Validate a protocol message
-     */
+    
+
+
     public ValidationResult validate(ProtocolMessage message) {
         ValidationResult result = new ValidationResult();
         
@@ -142,7 +142,7 @@ public class ProtocolValidator {
             return result;
         }
         
-        // Validate magic bytes
+        
         if (validateMagicBytes) {
             if (!validateMagicBytes(message)) {
                 result.valid = false;
@@ -150,7 +150,7 @@ public class ProtocolValidator {
             }
         }
         
-        // Validate protocol version
+        
         if (validateVersion) {
             if (!validateVersion(message)) {
                 result.valid = false;
@@ -158,7 +158,7 @@ public class ProtocolValidator {
             }
         }
         
-        // Validate payload size
+        
         if (validatePayloadSize) {
             if (!validatePayloadSize(message)) {
                 result.valid = false;
@@ -166,7 +166,7 @@ public class ProtocolValidator {
             }
         }
         
-        // Validate checksum
+        
         if (validateChecksum) {
             if (!validateChecksum(message)) {
                 result.valid = false;
@@ -174,7 +174,7 @@ public class ProtocolValidator {
             }
         }
         
-        // Validate MAC
+        
         if (validateMAC) {
             if (!validateMAC(message)) {
                 result.valid = false;
@@ -182,7 +182,7 @@ public class ProtocolValidator {
             }
         }
         
-        // Validate timestamp
+        
         if (validateTimestamp) {
             if (!validateTimestamp(message)) {
                 result.valid = false;
@@ -190,7 +190,7 @@ public class ProtocolValidator {
             }
         }
         
-        // Validate sequence number
+        
         if (validateSequence) {
             if (!validateSequence(message)) {
                 result.valid = false;
@@ -198,13 +198,13 @@ public class ProtocolValidator {
             }
         }
         
-        // Validate message type
+        
         if (!validateMessageType(message)) {
             result.valid = false;
             result.errors.add("Invalid message type");
         }
         
-        // Validate fragment fields if fragmentation is enabled
+        
         if (message.isFragmentationEnabled()) {
             if (!validateFragmentFields(message)) {
                 result.valid = false;
@@ -215,9 +215,9 @@ public class ProtocolValidator {
         return result;
     }
     
-    /**
-     * Validate magic bytes
-     */
+    
+
+
     private boolean validateMagicBytes(ProtocolMessage message) {
         byte[] magic = message.getMagic();
         if (magic == null || magic.length != ProtocolMessage.MAGIC_BYTES.length) {
@@ -226,31 +226,31 @@ public class ProtocolValidator {
         return Arrays.equals(magic, ProtocolMessage.MAGIC_BYTES);
     }
     
-    /**
-     * Validate protocol version
-     */
+    
+
+
     private boolean validateVersion(ProtocolMessage message) {
         int version = message.getProtocolVersion();
-        // Accept current version and one minor version back
+        
         return version == ProtocolMessage.PROTOCOL_VERSION || 
                version == (ProtocolMessage.PROTOCOL_VERSION - 1);
     }
     
-    /**
-     * Validate payload size
-     */
+    
+
+
     private boolean validatePayloadSize(ProtocolMessage message) {
         int payloadLength = message.getPayloadLength();
         return payloadLength >= MIN_PAYLOAD_SIZE && payloadLength <= MAX_PAYLOAD_SIZE;
     }
     
-    /**
-     * Validate checksum using CRC32
-     */
+    
+
+
     private boolean validateChecksum(ProtocolMessage message) {
         int expectedChecksum = message.getChecksum();
         if (expectedChecksum == 0) {
-            // Checksum not set, skip validation
+            
             return true;
         }
         
@@ -263,87 +263,87 @@ public class ProtocolValidator {
         return true;
     }
     
-    /**
-     * Calculate checksum for a message
-     */
+    
+
+
     private int calculateChecksum(ProtocolMessage message) {
         crc32.reset();
         
-        // Add magic bytes
+        
         crc32.update(message.getMagic());
         
-        // Add protocol version
+        
         ByteBuffer buffer = ByteBuffer.allocate(2);
         buffer.order(ByteOrder.BIG_ENDIAN);
         buffer.putShort((short) message.getProtocolVersion());
         crc32.update(buffer.array());
         
-        // Add message type
+        
         if (message.getMessageType() != null) {
             crc32.update(message.getMessageType().getCode());
         }
         
-        // Add sequence number
+        
         buffer = ByteBuffer.allocate(4);
         buffer.order(ByteOrder.BIG_ENDIAN);
         buffer.putInt(message.getSequenceNumber());
         crc32.update(buffer.array());
         
-        // Add session ID
+        
         buffer = ByteBuffer.allocate(4);
         buffer.order(ByteOrder.BIG_ENDIAN);
         buffer.putInt(message.getSessionId());
         crc32.update(buffer.array());
         
-        // Add flags
+        
         buffer = ByteBuffer.allocate(4);
         buffer.order(ByteOrder.BIG_ENDIAN);
         buffer.putInt(message.getFlags());
         crc32.update(buffer.array());
         
-        // Add payload length
+        
         buffer = ByteBuffer.allocate(4);
         buffer.order(ByteOrder.BIG_ENDIAN);
         buffer.putInt(message.getPayloadLength());
         crc32.update(buffer.array());
         
-        // Add timestamp
+        
         buffer = ByteBuffer.allocate(4);
         buffer.order(ByteOrder.BIG_ENDIAN);
         buffer.putInt(message.getTimestamp());
         crc32.update(buffer.array());
         
-        // Add payload
+        
         crc32.update(message.getPayload());
         
         return (int) crc32.getValue();
     }
     
-    /**
-     * Validate MAC (Message Authentication Code)
-     * Simplified HMAC-like implementation
-     */
+    
+
+
+
     private boolean validateMAC(ProtocolMessage message) {
         if (macKey == null || macKey.length == 0) {
-            return true; // No MAC key set, skip validation
+            return true; 
         }
         
-        int expectedMAC = message.getChecksum(); // Reuse checksum field for MAC
+        int expectedMAC = message.getChecksum(); 
         if (expectedMAC == 0) {
-            return true; // MAC not set
+            return true; 
         }
         
         int calculatedMAC = calculateMAC(message);
         return expectedMAC == calculatedMAC;
     }
     
-    /**
-     * Calculate MAC for a message
-     */
+    
+
+
     private int calculateMAC(ProtocolMessage message) {
         int mac = 0;
         
-        // XOR-based MAC with key
+        
         byte[] data = message.serialize();
         for (int i = 0; i < data.length; i++) {
             mac ^= (data[i] & 0xFF) * (macKey[i % macKey.length] & 0xFF);
@@ -352,59 +352,59 @@ public class ProtocolValidator {
         return mac & 0xFFFFFFFF;
     }
     
-    /**
-     * Validate timestamp
-     */
+    
+
+
     private boolean validateTimestamp(ProtocolMessage message) {
         int timestamp = message.getTimestamp();
         int currentTime = (int) (System.currentTimeMillis() / 1000);
         
-        // Allow messages from the past and future within tolerance
+        
         int diff = Math.abs(timestamp - currentTime);
         return diff <= TIMESTAMP_TOLERANCE;
     }
     
-    /**
-     * Validate sequence number
-     */
+    
+
+
     private boolean validateSequence(ProtocolMessage message) {
         int sequenceNumber = message.getSequenceNumber();
-        // Sequence number should be non-negative
+        
         return sequenceNumber >= 0;
     }
     
-    /**
-     * Validate message type
-     */
+    
+
+
     private boolean validateMessageType(ProtocolMessage message) {
         return message.getMessageType() != null;
     }
     
-    /**
-     * Validate fragment fields
-     */
+    
+
+
     private boolean validateFragmentFields(ProtocolMessage message) {
         int fragmentIndex = message.getFragmentIndex();
         int totalFragments = message.getTotalFragments();
         int fragmentOffset = message.getFragmentOffset();
         int totalFragmentSize = message.getTotalFragmentSize();
         
-        // Validate fragment index
+        
         if (fragmentIndex < 0 || fragmentIndex >= totalFragments) {
             return false;
         }
         
-        // Validate total fragments
+        
         if (totalFragments <= 0 || totalFragments > 1000) {
             return false;
         }
         
-        // Validate fragment offset
+        
         if (fragmentOffset < 0 || fragmentOffset >= totalFragmentSize) {
             return false;
         }
         
-        // Validate total fragment size
+        
         if (totalFragmentSize <= 0 || totalFragmentSize > MAX_PAYLOAD_SIZE) {
             return false;
         }
@@ -412,9 +412,9 @@ public class ProtocolValidator {
         return true;
     }
     
-    /**
-     * Validate raw byte data as a protocol message
-     */
+    
+
+
     public ValidationResult validateBytes(byte[] data) {
         ValidationResult result = new ValidationResult();
         
@@ -424,7 +424,7 @@ public class ProtocolValidator {
             return result;
         }
         
-        // Check magic bytes
+        
         if (validateMagicBytes) {
             if (data.length < 4 || 
                 data[0] != ProtocolMessage.MAGIC_BYTES[0] ||
@@ -437,7 +437,7 @@ public class ProtocolValidator {
             }
         }
         
-        // Try to deserialize and validate
+        
         try {
             ProtocolMessage message = ProtocolMessage.deserialize(data);
             return validate(message);
@@ -448,9 +448,9 @@ public class ProtocolValidator {
         }
     }
     
-    /**
-     * Validation result
-     */
+    
+
+
     public static class ValidationResult {
         public boolean valid;
         public final java.util.List<String> errors;

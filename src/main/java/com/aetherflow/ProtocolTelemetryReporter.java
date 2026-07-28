@@ -2,9 +2,9 @@ package com.aetherflow;
 
 import java.util.Map;
 
-/**
- * Simulates a telemetry and reporting engine that formats system metrics.
- */
+
+
+
 public class ProtocolTelemetryReporter {
     
     private final MetricsCollector metricsCollector;
@@ -15,12 +15,12 @@ public class ProtocolTelemetryReporter {
         this.totalReportsSent = 0;
     }
     
-    /**
-     * Formats the metrics collector summary as a structured log report.
-     */
+    
+
+
     public synchronized String generateReport() {
         totalReportsSent++;
-        Map<String, Object> summary = metricsCollector.getSummary();
+        MetricsCollector.MetricsSummary summary = metricsCollector.getSummary();
         
         StringBuilder report = new StringBuilder();
         report.append("--- AETHERFLOW TELEMETRY REPORT ---\n");
@@ -28,9 +28,10 @@ public class ProtocolTelemetryReporter {
         report.append("Report Sequence: ").append(totalReportsSent).append("\n");
         report.append("Metrics collected:\n");
         
-        for (Map.Entry<String, Object> entry : summary.entrySet()) {
-            report.append("  ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
-        }
+        report.append("  totalMetrics: ").append(summary.totalMetrics).append("\n");
+        report.append("  totalHistograms: ").append(summary.totalHistograms).append("\n");
+        report.append("  totalMetricCount: ").append(summary.totalMetricCount).append("\n");
+        report.append("  totalHistogramObservations: ").append(summary.totalHistogramObservations).append("\n");
         
         report.append("------------------------------------\n");
         return report.toString();

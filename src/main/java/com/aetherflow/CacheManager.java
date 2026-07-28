@@ -6,14 +6,14 @@ import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 import java.lang.ref.*;
 
-/**
- * Cache manager for AetherFlow.
- * Provides multi-level caching with eviction policies, expiration, and statistics.
- * Supports LRU, LFU, FIFO, and custom eviction strategies.
- */
+
+
+
+
+
 public class CacheManager {
     
-    // Cache entry
+    
     public static class CacheEntry {
         public final String key;
         public final byte[] value;
@@ -57,7 +57,7 @@ public class CacheManager {
         }
     }
     
-    // Eviction policy
+    
     public enum EvictionPolicy {
         LRU,
         LFU,
@@ -67,7 +67,7 @@ public class CacheManager {
         NONE
     }
     
-    // Cache configuration
+    
     public static class CacheConfig {
         public long maxSize;
         public long maxEntries;
@@ -80,19 +80,19 @@ public class CacheManager {
         public int compressionThreshold;
         
         public CacheConfig() {
-            this.maxSize = 100 * 1024 * 1024; // 100MB
+            this.maxSize = 100 * 1024 * 1024; 
             this.maxEntries = 10000;
-            this.defaultTtl = 3600000; // 1 hour
+            this.defaultTtl = 3600000; 
             this.evictionPolicy = EvictionPolicy.LRU;
             this.enableStats = true;
             this.enableWeakReferences = true;
-            this.cleanupInterval = 60000; // 1 minute
+            this.cleanupInterval = 60000; 
             this.enableCompression = false;
-            this.compressionThreshold = 1024; // 1KB
+            this.compressionThreshold = 1024; 
         }
     }
     
-    // Cache statistics
+    
     public static class CacheStats {
         public final AtomicLong totalGets;
         public final AtomicLong totalHits;
@@ -141,30 +141,30 @@ public class CacheManager {
         }
     }
     
-    // Cache configuration
+    
     private final CacheConfig config;
     
-    // Cache storage
+    
     private final Map<String, CacheEntry> cache;
     
-    // Access order tracking for LRU
+    
     private final LinkedHashMap<String, Long> accessOrder;
     
-    // Statistics
+    
     private final CacheStats stats;
     
-    // Lock for cache operations
+    
     private final ReentrantReadWriteLock cacheLock;
     
-    // Scheduled executor for cleanup
+    
     private final ScheduledExecutorService cleanupExecutor;
     
-    // Shutdown flag
+    
     private volatile boolean shutdown;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public CacheManager(CacheConfig config) {
         this.config = config;
         this.cache = new ConcurrentHashMap<>();
@@ -174,20 +174,20 @@ public class CacheManager {
         this.cleanupExecutor = Executors.newSingleThreadScheduledExecutor();
         this.shutdown = false;
         
-        // Start cleanup thread
+        
         startCleanupThread();
     }
     
-    /**
-     * Default constructor
-     */
+    
+
+
     public CacheManager() {
         this(new CacheConfig());
     }
     
-    /**
-     * Start cleanup thread
-     */
+    
+
+
     private void startCleanupThread() {
         cleanupExecutor.scheduleAtFixedRate(() -> {
             cleanupExpiredEntries();
@@ -195,37 +195,37 @@ public class CacheManager {
         }, config.cleanupInterval, config.cleanupInterval, TimeUnit.MILLISECONDS);
     }
     
-    /**
-     * Put entry in cache
-     */
+    
+
+
     public void put(String key, byte[] value) {
         put(key, value, config.defaultTtl, null);
     }
     
-    /**
-     * Put entry in cache with TTL
-     */
+    
+
+
     public void put(String key, byte[] value, long ttl) {
         put(key, value, ttl, null);
     }
     
-    /**
-     * Put entry in cache with TTL and metadata
-     */
+    
+
+
     public void put(String key, byte[] value, long ttl, Map<String, Object> metadata) {
         cacheLock.writeLock().lock();
         try {
-            // Check if entry already exists
+            
             CacheEntry existing = cache.get(key);
             if (existing != null) {
                 stats.currentSize.addAndGet(-existing.size);
             }
             
-            // Create new entry
+            
             CacheEntry entry = new CacheEntry(key, value, ttl, metadata);
             
-            // The check for capacity and actual put are not atomic
-            // This can lead to inconsistent cache state
+            
+            
             cache.put(key, entry);
             accessOrder.put(key, System.currentTimeMillis());
             
@@ -233,7 +233,7 @@ public class CacheManager {
             stats.currentEntries.incrementAndGet();
             stats.totalPuts.incrementAndGet();
             
-            // Enforce capacity limits
+            
             enforceCapacityLimits();
             
         } finally {
@@ -241,9 +241,9 @@ public class CacheManager {
         }
     }
     
-    /**
-     * Get entry from cache
-     */
+    
+
+
     public byte[] get(String key) {
         cacheLock.readLock().lock();
         try {
@@ -262,7 +262,7 @@ public class CacheManager {
                 return null;
             }
             
-            // The entry can be GC'd while still being in the cache
+            
             if (config.enableWeakReferences) {
                 CacheEntry refCheck = entry.weakRef.get();
                 if (refCheck == null) {
@@ -283,9 +283,9 @@ public class CacheManager {
         }
     }
     
-    /**
-     * Remove entry from cache
-     */
+    
+
+
     public void remove(String key) {
         cacheLock.writeLock().lock();
         try {
@@ -301,9 +301,9 @@ public class CacheManager {
         }
     }
     
-    /**
-     * Check if key exists
-     */
+    
+
+
     public boolean containsKey(String key) {
         cacheLock.readLock().lock();
         try {
@@ -322,9 +322,9 @@ public class CacheManager {
         }
     }
     
-    /**
-     * Get all keys
-     */
+    
+
+
     public Set<String> getKeys() {
         cacheLock.readLock().lock();
         try {
@@ -334,23 +334,23 @@ public class CacheManager {
         }
     }
     
-    /**
-     * Get cache size
-     */
+    
+
+
     public long getSize() {
         return stats.currentSize.get();
     }
     
-    /**
-     * Get entry count
-     */
+    
+
+
     public long getEntryCount() {
         return stats.currentEntries.get();
     }
     
-    /**
-     * Cleanup expired entries
-     */
+    
+
+
     private void cleanupExpiredEntries() {
         cacheLock.writeLock().lock();
         try {
@@ -373,18 +373,18 @@ public class CacheManager {
         }
     }
     
-    /**
-     * Enforce capacity limits
-     */
+    
+
+
     private void enforceCapacityLimits() {
         cacheLock.writeLock().lock();
         try {
-            // Enforce size limit
+            
             while (stats.currentSize.get() > config.maxSize && !cache.isEmpty()) {
                 evictEntry();
             }
             
-            // Enforce entry limit
+            
             while (stats.currentEntries.get() > config.maxEntries && !cache.isEmpty()) {
                 evictEntry();
             }
@@ -393,9 +393,9 @@ public class CacheManager {
         }
     }
     
-    /**
-     * Evict entry based on policy
-     */
+    
+
+
     private void evictEntry() {
         String keyToEvict = null;
         
@@ -425,9 +425,9 @@ public class CacheManager {
         }
     }
     
-    /**
-     * Find LRU entry
-     */
+    
+
+
     private String findLRUEntry() {
         long oldestAccess = Long.MAX_VALUE;
         String oldestKey = null;
@@ -442,9 +442,9 @@ public class CacheManager {
         return oldestKey;
     }
     
-    /**
-     * Find LFU entry
-     */
+    
+
+
     private String findLFUEntry() {
         int minAccessCount = Integer.MAX_VALUE;
         String minKey = null;
@@ -459,9 +459,9 @@ public class CacheManager {
         return minKey;
     }
     
-    /**
-     * Find FIFO entry
-     */
+    
+
+
     private String findFIFOEntry() {
         long oldestCreation = Long.MAX_VALUE;
         String oldestKey = null;
@@ -476,9 +476,9 @@ public class CacheManager {
         return oldestKey;
     }
     
-    /**
-     * Find LIFO entry
-     */
+    
+
+
     private String findLIFOEntry() {
         long newestCreation = Long.MIN_VALUE;
         String newestKey = null;
@@ -493,9 +493,9 @@ public class CacheManager {
         return newestKey;
     }
     
-    /**
-     * Find random entry
-     */
+    
+
+
     private String findRandomEntry() {
         if (cache.isEmpty()) {
             return null;
@@ -506,9 +506,9 @@ public class CacheManager {
         return keys.get(random.nextInt(keys.size()));
     }
     
-    /**
-     * Clear cache
-     */
+    
+
+
     public void clear() {
         cacheLock.writeLock().lock();
         try {
@@ -524,23 +524,23 @@ public class CacheManager {
         }
     }
     
-    /**
-     * Get statistics
-     */
+    
+
+
     public CacheStats getStats() {
         return stats;
     }
     
-    /**
-     * Get configuration
-     */
+    
+
+
     public CacheConfig getConfig() {
         return config;
     }
     
-    /**
-     * Get cache entry
-     */
+    
+
+
     public CacheEntry getEntry(String key) {
         cacheLock.readLock().lock();
         try {
@@ -550,9 +550,9 @@ public class CacheManager {
         }
     }
     
-    /**
-     * Get cache entries
-     */
+    
+
+
     public Collection<CacheEntry> getEntries() {
         cacheLock.readLock().lock();
         try {
@@ -562,32 +562,32 @@ public class CacheManager {
         }
     }
     
-    /**
-     * Set eviction policy
-     */
+    
+
+
     public void setEvictionPolicy(EvictionPolicy policy) {
         config.evictionPolicy = policy;
     }
     
-    /**
-     * Set max size
-     */
+    
+
+
     public void setMaxSize(long maxSize) {
         config.maxSize = maxSize;
         enforceCapacityLimits();
     }
     
-    /**
-     * Set max entries
-     */
+    
+
+
     public void setMaxEntries(long maxEntries) {
         config.maxEntries = maxEntries;
         enforceCapacityLimits();
     }
     
-    /**
-     * Shutdown cache manager
-     */
+    
+
+
     public void shutdown() {
         shutdown = true;
         

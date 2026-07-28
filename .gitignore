@@ -16,4 +16,6 @@ poc_files/
 poc_generator.py
 rebrand.py
 fix.patch
+diversify.py
+
 

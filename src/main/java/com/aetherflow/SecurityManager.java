@@ -9,14 +9,14 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 import java.nio.charset.StandardCharsets;
 
-/**
- * Security manager for AetherFlow.
- * Handles authentication, authorization, encryption, and security policies.
- * Supports multiple authentication mechanisms and fine-grained access control.
- */
+
+
+
+
+
 public class SecurityManager {
     
-    // Authentication type
+    
     public enum AuthType {
         PASSWORD,
         TOKEN,
@@ -27,7 +27,7 @@ public class SecurityManager {
         MULTI_FACTOR
     }
     
-    // Permission
+    
     public static class Permission {
         public final String resource;
         public final String action;
@@ -61,7 +61,7 @@ public class SecurityManager {
         }
     }
     
-    // Role
+    
     public static class Role {
         public final String roleName;
         public final Set<Permission> permissions;
@@ -95,7 +95,7 @@ public class SecurityManager {
         }
     }
     
-    // User
+    
     public static class User {
         public final String userId;
         public final String username;
@@ -140,7 +140,7 @@ public class SecurityManager {
         }
     }
     
-    // Authentication token
+    
     public static class AuthToken {
         public final String tokenId;
         public final String userId;
@@ -184,7 +184,7 @@ public class SecurityManager {
         }
     }
     
-    // Security policy
+    
     public static class SecurityPolicy {
         public final String policyId;
         public final String policyName;
@@ -226,14 +226,14 @@ public class SecurityManager {
                     }
                 }
                 
-                // Some rules may not be properly evaluated
+                
             }
             
             return true;
         }
     }
     
-    // Security manager configuration
+    
     public static class SecurityConfig {
         public long defaultTokenTtl;
         public long maxTokenTtl;
@@ -251,10 +251,10 @@ public class SecurityManager {
         public boolean requireUppercase;
         
         public SecurityConfig() {
-            this.defaultTokenTtl = 3600000; // 1 hour
-            this.maxTokenTtl = 86400000; // 24 hours
+            this.defaultTokenTtl = 3600000; 
+            this.maxTokenTtl = 86400000; 
             this.maxFailedAttempts = 5;
-            this.lockoutDuration = 900000; // 15 minutes
+            this.lockoutDuration = 900000; 
             this.enableMultiFactor = false;
             this.enableAuditLogging = true;
             this.enableEncryption = true;
@@ -268,7 +268,7 @@ public class SecurityManager {
         }
     }
     
-    // Security statistics
+    
     public static class SecurityStats {
         public final AtomicLong totalAuthAttempts;
         public final AtomicLong successfulAuthAttempts;
@@ -328,51 +328,51 @@ public class SecurityManager {
         }
     }
     
-    // Security manager configuration
+    
     private final SecurityConfig config;
     
-    // Users
+    
     private final Map<String, User> users;
     
-    // Roles
+    
     private final Map<String, Role> roles;
     
-    // Active tokens
+    
     private final Map<String, AuthToken> tokens;
     
-    // Security policies
+    
     private final Map<String, SecurityPolicy> policies;
     
-    // Failed attempt tracking
+    
     private final Map<String, AtomicInteger> failedAttempts;
     
-    // Lockout tracking
+    
     private final Map<String, Long> lockoutTimestamps;
     
-    // Statistics
+    
     private final SecurityStats stats;
     
-    // Lock for user management
+    
     private final ReentrantLock userLock;
     
-    // Lock for token management
+    
     private final ReentrantLock tokenLock;
     
-    // Token ID generator
+    
     private final AtomicLong tokenIdGenerator;
     
-    // Scheduled executor for cleanup
+    
     private final ScheduledExecutorService cleanupExecutor;
     
-    // Shutdown flag
+    
     private volatile boolean shutdown;
     
-    // Encryption key
+    
     private volatile SecretKey encryptionKey;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public SecurityManager(SecurityConfig config) throws SecurityException {
         this.config = config;
         this.users = new ConcurrentHashMap<>();
@@ -394,56 +394,56 @@ public class SecurityManager {
             throw new SecurityException("Failed to initialize encryption key", e);
         }
         
-        // Initialize default roles
+        
         initializeDefaultRoles();
         
-        // Start cleanup thread
+        
         startCleanupThread();
     }
     
-    /**
-     * Default constructor
-     */
+    
+
+
     public SecurityManager() throws SecurityException {
         this(new SecurityConfig());
     }
     
-    /**
-     * Initialize default roles
-     */
+    
+
+
     private void initializeDefaultRoles() {
-        // Admin role with all permissions
+        
         Set<Permission> adminPermissions = new HashSet<>();
         adminPermissions.add(new Permission("*", "*"));
         Role adminRole = new Role("admin", adminPermissions);
         roles.put("admin", adminRole);
         
-        // User role with basic permissions
+        
         Set<Permission> userPermissions = new HashSet<>();
         userPermissions.add(new Permission("data", "read"));
         userPermissions.add(new Permission("data", "write"));
         Role userRole = new Role("user", userPermissions);
         roles.put("user", userRole);
         
-        // Guest role with read-only permissions
+        
         Set<Permission> guestPermissions = new HashSet<>();
         guestPermissions.add(new Permission("data", "read"));
         Role guestRole = new Role("guest", guestPermissions);
         roles.put("guest", guestRole);
     }
     
-    /**
-     * Generate encryption key
-     */
+    
+
+
     private SecretKey generateEncryptionKey() throws Exception {
         KeyGenerator keyGenerator = KeyGenerator.getInstance(config.encryptionAlgorithm);
         keyGenerator.init(config.encryptionKeySize);
         return keyGenerator.generateKey();
     }
     
-    /**
-     * Start cleanup thread
-     */
+    
+
+
     private void startCleanupThread() {
         cleanupExecutor.scheduleAtFixedRate(() -> {
             cleanupExpiredTokens();
@@ -451,9 +451,9 @@ public class SecurityManager {
         }, 60000, 60000, TimeUnit.MILLISECONDS);
     }
     
-    /**
-     * Create user
-     */
+    
+
+
     public void createUser(String userId, String username, String email, Set<Role> roles, 
                          Map<String, Object> attributes) {
         userLock.lock();
@@ -465,22 +465,22 @@ public class SecurityManager {
         }
     }
     
-    /**
-     * Get user
-     */
+    
+
+
     public User getUser(String userId) {
         return users.get(userId);
     }
     
-    /**
-     * Delete user
-     */
+    
+
+
     public void deleteUser(String userId) {
         userLock.lock();
         try {
             User user = users.remove(userId);
             if (user != null) {
-                // Revoke all tokens for this user
+                
                 revokeAllUserTokens(userId);
             }
         } finally {
@@ -488,35 +488,35 @@ public class SecurityManager {
         }
     }
     
-    /**
-     * Create role
-     */
+    
+
+
     public void createRole(String roleName, Set<Permission> permissions, 
                          Map<String, Object> metadata) {
         Role role = new Role(roleName, permissions, metadata);
         roles.put(roleName, role);
     }
     
-    /**
-     * Get role
-     */
+    
+
+
     public Role getRole(String roleName) {
         return roles.get(roleName);
     }
     
-    /**
-     * Delete role
-     */
+    
+
+
     public void deleteRole(String roleName) {
         roles.remove(roleName);
     }
     
-    /**
-     * Authenticate user
-     */
+    
+
+
     public AuthToken authenticate(String userId, String credentials, AuthType authType) 
         throws SecurityException {
-        // Check lockout
+        
         Long lockoutTimestamp = lockoutTimestamps.get(userId);
         if (lockoutTimestamp != null && 
             System.currentTimeMillis() - lockoutTimestamp < config.lockoutDuration) {
@@ -554,13 +554,13 @@ public class SecurityManager {
             throw new SecurityException("Invalid credentials");
         }
         
-        // Reset failed attempts on successful authentication
+        
         failedAttempts.remove(userId);
         lockoutTimestamps.remove(userId);
         
         user.recordLogin();
         
-        // Issue token
+        
         String tokenId = "token_" + tokenIdGenerator.incrementAndGet() + "_" + 
                        System.currentTimeMillis();
         AuthToken token = new AuthToken(tokenId, userId, authType, config.defaultTokenTtl, null);
@@ -578,24 +578,24 @@ public class SecurityManager {
         return token;
     }
     
-    /**
-     * Validate credentials
-     */
+    
+
+
     private boolean validateCredentials(User user, String credentials, AuthType authType) {
-        // In a real implementation, this would use proper password hashing and comparison
-        // For now, we use a simple comparison which is vulnerable to timing attacks
+        
+        
         String storedCredentials = (String) user.attributes.get("credentials");
         if (storedCredentials == null) {
             return false;
         }
         
-        // String comparison is not constant-time
+        
         return storedCredentials.equals(credentials);
     }
     
-    /**
-     * Validate token
-     */
+    
+
+
     public boolean validateToken(String tokenId) {
         tokenLock.lock();
         try {
@@ -617,9 +617,9 @@ public class SecurityManager {
         }
     }
     
-    /**
-     * Get token
-     */
+    
+
+
     public AuthToken getToken(String tokenId) {
         tokenLock.lock();
         try {
@@ -629,9 +629,9 @@ public class SecurityManager {
         }
     }
     
-    /**
-     * Revoke token
-     */
+    
+
+
     public void revokeToken(String tokenId) {
         tokenLock.lock();
         try {
@@ -646,9 +646,9 @@ public class SecurityManager {
         }
     }
     
-    /**
-     * Revoke all user tokens
-     */
+    
+
+
     public void revokeAllUserTokens(String userId) {
         tokenLock.lock();
         try {
@@ -666,9 +666,9 @@ public class SecurityManager {
         }
     }
     
-    /**
-     * Check permission
-     */
+    
+
+
     public boolean checkPermission(String userId, String resource, String action) {
         User user = users.get(userId);
         if (user == null) {
@@ -682,9 +682,9 @@ public class SecurityManager {
         return hasPermission;
     }
     
-    /**
-     * Check permission with context
-     */
+    
+
+
     public boolean checkPermission(String userId, String resource, String action, 
                                    Map<String, Object> context) {
         User user = users.get(userId);
@@ -693,10 +693,10 @@ public class SecurityManager {
             return false;
         }
         
-        // Check user permissions
+        
         boolean hasPermission = user.hasPermission(resource, action);
         
-        // Check security policies
+        
         if (hasPermission) {
             for (SecurityPolicy policy : policies.values()) {
                 if (!policy.evaluate(context)) {
@@ -711,32 +711,32 @@ public class SecurityManager {
         return hasPermission;
     }
     
-    /**
-     * Create security policy
-     */
+    
+
+
     public void createPolicy(String policyId, String policyName, String description, 
                             Map<String, Object> rules) {
         SecurityPolicy policy = new SecurityPolicy(policyId, policyName, description, rules);
         policies.put(policyId, policy);
     }
     
-    /**
-     * Get policy
-     */
+    
+
+
     public SecurityPolicy getPolicy(String policyId) {
         return policies.get(policyId);
     }
     
-    /**
-     * Delete policy
-     */
+    
+
+
     public void deletePolicy(String policyId) {
         policies.remove(policyId);
     }
     
-    /**
-     * Enable policy
-     */
+    
+
+
     public void enablePolicy(String policyId) {
         SecurityPolicy policy = policies.get(policyId);
         if (policy != null) {
@@ -744,9 +744,9 @@ public class SecurityManager {
         }
     }
     
-    /**
-     * Disable policy
-     */
+    
+
+
     public void disablePolicy(String policyId) {
         SecurityPolicy policy = policies.get(policyId);
         if (policy != null) {
@@ -754,9 +754,9 @@ public class SecurityManager {
         }
     }
     
-    /**
-     * Encrypt data
-     */
+    
+
+
     public byte[] encrypt(byte[] data) throws SecurityException {
         try {
             Cipher cipher = Cipher.getInstance(config.encryptionAlgorithm);
@@ -768,9 +768,9 @@ public class SecurityManager {
         }
     }
     
-    /**
-     * Decrypt data
-     */
+    
+
+
     public byte[] decrypt(byte[] encryptedData) throws SecurityException {
         try {
             Cipher cipher = Cipher.getInstance(config.encryptionAlgorithm);
@@ -782,9 +782,9 @@ public class SecurityManager {
         }
     }
     
-    /**
-     * Hash password
-     */
+    
+
+
     public String hashPassword(String password) throws SecurityException {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -796,14 +796,14 @@ public class SecurityManager {
         }
     }
     
-    /**
-     * Verify password
-     */
+    
+
+
     public boolean verifyPassword(String password, String hashedPassword) 
         throws SecurityException {
         try {
             String computedHash = hashPassword(password);
-            // String comparison is not constant-time
+            
             return computedHash.equals(hashedPassword);
         } catch (Exception e) {
             stats.recordError("Password verification failed");
@@ -811,9 +811,9 @@ public class SecurityManager {
         }
     }
     
-    /**
-     * Cleanup expired tokens
-     */
+    
+
+
     private void cleanupExpiredTokens() {
         tokenLock.lock();
         try {
@@ -829,9 +829,9 @@ public class SecurityManager {
         }
     }
     
-    /**
-     * Cleanup lockouts
-     */
+    
+
+
     private void cleanupLockouts() {
         long now = System.currentTimeMillis();
         
@@ -845,44 +845,44 @@ public class SecurityManager {
         }
     }
     
-    /**
-     * Get statistics
-     */
+    
+
+
     public SecurityStats getStats() {
         return stats;
     }
     
-    /**
-     * Get configuration
-     */
+    
+
+
     public SecurityConfig getConfig() {
         return config;
     }
     
-    /**
-     * Get all users
-     */
+    
+
+
     public Collection<User> getUsers() {
         return new ArrayList<>(users.values());
     }
     
-    /**
-     * Get all roles
-     */
+    
+
+
     public Collection<Role> getRoles() {
         return new ArrayList<>(roles.values());
     }
     
-    /**
-     * Get all policies
-     */
+    
+
+
     public Collection<SecurityPolicy> getPolicies() {
         return new ArrayList<>(policies.values());
     }
     
-    /**
-     * Get all tokens
-     */
+    
+
+
     public Collection<AuthToken> getTokens() {
         tokenLock.lock();
         try {
@@ -892,9 +892,9 @@ public class SecurityManager {
         }
     }
     
-    /**
-     * Shutdown security manager
-     */
+    
+
+
     public void shutdown() {
         shutdown = true;
         
@@ -905,7 +905,7 @@ public class SecurityManager {
             Thread.currentThread().interrupt();
         }
         
-        // Revoke all tokens
+        
         revokeAllTokens();
         
         users.clear();
@@ -915,9 +915,9 @@ public class SecurityManager {
         lockoutTimestamps.clear();
     }
     
-    /**
-     * Revoke all tokens
-     */
+    
+
+
     private void revokeAllTokens() {
         tokenLock.lock();
         try {
@@ -930,9 +930,9 @@ public class SecurityManager {
         }
     }
     
-    /**
-     * Security exception
-     */
+    
+
+
     public static class SecurityException extends RuntimeException {
         public SecurityException(String message) {
             super(message);

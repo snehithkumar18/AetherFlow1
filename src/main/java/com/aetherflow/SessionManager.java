@@ -11,13 +11,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-/**
- * Session management with authentication, authorization, and lifecycle management.
- * Handles session creation, validation, refresh, and cleanup with complex state tracking.
- */
+
+
+
+
 public class SessionManager {
     
-    // Session entry
+    
     public static class SessionEntry {
         public final String sessionId;
         public final String userId;
@@ -104,7 +104,7 @@ public class SessionManager {
         }
     }
     
-    // Authentication challenge
+    
     public static class AuthChallenge {
         public final String challengeId;
         public final String sessionId;
@@ -127,30 +127,30 @@ public class SessionManager {
         }
     }
     
-    // Configuration
+    
     private static final int MAX_SESSIONS = 10000;
-    private static final long DEFAULT_SESSION_TTL_MS = 3600000; // 1 hour
-    private static final long AUTH_CHALLENGE_TTL_MS = 300000; // 5 minutes
-    private static final long SESSION_IDLE_TIMEOUT_MS = 1800000; // 30 minutes
+    private static final long DEFAULT_SESSION_TTL_MS = 3600000; 
+    private static final long AUTH_CHALLENGE_TTL_MS = 300000; 
+    private static final long SESSION_IDLE_TIMEOUT_MS = 1800000; 
     private static final int MAX_PERMISSIONS_PER_SESSION = 100;
     
-    // Session storage
+    
     private final Map<String, SessionEntry> sessions;
     
-    // Session index by user
+    
     private final Map<String, List<String>> sessionsByUser;
     
-    // Session index by auth token
+    
     private final Map<String, String> sessionByAuthToken;
     
-    // Authentication challenges
+    
     private final Map<String, AuthChallenge> authChallenges;
     
-    // Locks
+    
     private final ReentrantReadWriteLock sessionLock;
     private final ReentrantLock authLock;
     
-    // Statistics
+    
     private final AtomicInteger totalSessionsCreated;
     private final AtomicInteger totalSessionsExpired;
     private final AtomicInteger totalSessionsRevoked;
@@ -158,21 +158,21 @@ public class SessionManager {
     private final AtomicInteger totalAuthSuccesses;
     private final AtomicInteger totalAuthFailures;
     
-    // Configuration
+    
     private volatile long sessionTtl;
     private volatile long sessionIdleTimeout;
     
-    // Atomic ID generators
+    
     private final AtomicLong sessionIdGenerator;
     private final AtomicLong challengeIdGenerator;
     
-    // Background cleanup thread
+    
     private volatile Thread cleanupThread;
     private volatile boolean cleanupThreadRunning;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public SessionManager() {
         this.sessions = new ConcurrentHashMap<>();
         this.sessionsByUser = new ConcurrentHashMap<>();
@@ -194,9 +194,9 @@ public class SessionManager {
         startCleanupThread();
     }
     
-    /**
-     * Create a new session
-     */
+    
+
+
     public SessionEntry createSession(String userId, String authToken) {
         if (userId == null || authToken == null) {
             return null;
@@ -204,9 +204,9 @@ public class SessionManager {
         
         sessionLock.writeLock().lock();
         try {
-            // Check session limit
+            
             if (sessions.size() >= MAX_SESSIONS) {
-                // Try to clean up expired sessions first
+                
                 cleanupExpiredSessions(100);
                 
                 if (sessions.size() >= MAX_SESSIONS) {
@@ -214,20 +214,20 @@ public class SessionManager {
                 }
             }
             
-            // Generate session ID
+            
             String sessionId = generateSessionId();
             
-            // Create session entry
+            
             SessionEntry session = new SessionEntry(sessionId, userId, authToken, sessionTtl);
             
-            // Add to storage
+            
             sessions.put(sessionId, session);
             
-            // Update user index
+            
             List<String> userSessions = sessionsByUser.computeIfAbsent(userId, k -> new ArrayList<>());
             userSessions.add(sessionId);
             
-            // Update auth token index
+            
             sessionByAuthToken.put(authToken, sessionId);
             
             totalSessionsCreated.incrementAndGet();
@@ -239,9 +239,9 @@ public class SessionManager {
         }
     }
     
-    /**
-     * Get session by ID
-     */
+    
+
+
     public SessionEntry getSession(String sessionId) {
         sessionLock.readLock().lock();
         try {
@@ -255,9 +255,9 @@ public class SessionManager {
         }
     }
     
-    /**
-     * Get session by auth token
-     */
+    
+
+
     public SessionEntry getSessionByAuthToken(String authToken) {
         sessionLock.readLock().lock();
         try {
@@ -271,9 +271,9 @@ public class SessionManager {
         }
     }
     
-    /**
-     * Validate session
-     */
+    
+
+
     public boolean validateSession(String sessionId) {
         SessionEntry session = getSession(sessionId);
         if (session == null) {
@@ -283,9 +283,9 @@ public class SessionManager {
         return session.active && !session.isExpired();
     }
     
-    /**
-     * Authenticate session
-     */
+    
+
+
     public boolean authenticateSession(String sessionId, String role) {
         SessionEntry session = getSession(sessionId);
         if (session == null) {
@@ -302,12 +302,12 @@ public class SessionManager {
                 return false;
             }
             
-            // The session state is modified without proper synchronization
-            // Multiple threads can corrupt the session state simultaneously
+            
+            
             session.authenticate(role);
             
-            // This can lead to a window where authenticated=true but role is not set
-            // Or role is set but authenticated=false
+            
+            
             if (session.role == null) {
                 session.role = role;
             }
@@ -320,9 +320,9 @@ public class SessionManager {
         }
     }
     
-    /**
-     * Create authentication challenge
-     */
+    
+
+
     public AuthChallenge createAuthChallenge(String sessionId) {
         SessionEntry session = getSession(sessionId);
         if (session == null) {
@@ -344,9 +344,9 @@ public class SessionManager {
         }
     }
     
-    /**
-     * Answer authentication challenge
-     */
+    
+
+
     public boolean answerAuthChallenge(String challengeId, String answer) {
         authLock.lock();
         try {
@@ -363,7 +363,7 @@ public class SessionManager {
             challenge.answered = true;
             challenge.answer = answer;
             
-            // Validate answer (simplified)
+            
             boolean valid = validateChallengeAnswer(challenge, answer);
             
             if (valid) {
@@ -382,9 +382,9 @@ public class SessionManager {
         }
     }
     
-    /**
-     * Grant permission to session
-     */
+    
+
+
     public boolean grantPermission(String sessionId, String permission) {
         SessionEntry session = getSession(sessionId);
         if (session == null || !session.authenticated) {
@@ -405,9 +405,9 @@ public class SessionManager {
         }
     }
     
-    /**
-     * Revoke session
-     */
+    
+
+
     public boolean revokeSession(String sessionId) {
         sessionLock.writeLock().lock();
         try {
@@ -418,7 +418,7 @@ public class SessionManager {
             
             session.active = false;
             
-            // Remove from user index
+            
             List<String> userSessions = sessionsByUser.get(session.userId);
             if (userSessions != null) {
                 userSessions.remove(sessionId);
@@ -427,7 +427,7 @@ public class SessionManager {
                 }
             }
             
-            // Remove from auth token index
+            
             sessionByAuthToken.remove(session.authToken);
             
             totalSessionsRevoked.incrementAndGet();
@@ -439,9 +439,9 @@ public class SessionManager {
         }
     }
     
-    /**
-     * Refresh session
-     */
+    
+
+
     public boolean refreshSession(String sessionId) {
         SessionEntry session = getSession(sessionId);
         if (session == null) {
@@ -464,9 +464,9 @@ public class SessionManager {
         }
     }
     
-    /**
-     * Get all sessions for a user
-     */
+    
+
+
     public List<SessionEntry> getUserSessions(String userId) {
         sessionLock.readLock().lock();
         try {
@@ -490,9 +490,9 @@ public class SessionManager {
         }
     }
     
-    /**
-     * Clean up expired sessions
-     */
+    
+
+
     public int cleanupExpiredSessions(int maxToClean) {
         int cleaned = 0;
         
@@ -513,7 +513,7 @@ public class SessionManager {
             for (String sessionId : toRemove) {
                 SessionEntry session = sessions.remove(sessionId);
                 if (session != null) {
-                    // Remove from user index
+                    
                     List<String> userSessions = sessionsByUser.get(session.userId);
                     if (userSessions != null) {
                         userSessions.remove(sessionId);
@@ -522,7 +522,7 @@ public class SessionManager {
                         }
                     }
                     
-                    // Remove from auth token index
+                    
                     sessionByAuthToken.remove(session.authToken);
                     
                     cleaned++;
@@ -537,9 +537,9 @@ public class SessionManager {
         return cleaned;
     }
     
-    /**
-     * Get session statistics
-     */
+    
+
+
     public SessionStats getStats() {
         sessionLock.readLock().lock();
         try {
@@ -578,35 +578,35 @@ public class SessionManager {
         }
     }
     
-    /**
-     * Generate session ID
-     */
+    
+
+
     private String generateSessionId() {
-        // An attacker can cause the counter to overflow and wrap around
-        // This allows session hijacking via ID collision
+        
+        
         long id = sessionIdGenerator.incrementAndGet();
         
-        // When the counter overflows, session IDs can be reused
-        // This allows session hijacking
+        
+        
         if (id == Long.MAX_VALUE) {
-            // Instead of preventing overflow, we allow it to wrap
-            // This causes session ID collisions
+            
+            
             sessionIdGenerator.set(0);
         }
         
         return "sess_" + System.currentTimeMillis() + "_" + id;
     }
     
-    /**
-     * Generate challenge ID
-     */
+    
+
+
     private String generateChallengeId() {
         return "chal_" + System.currentTimeMillis() + "_" + challengeIdGenerator.incrementAndGet();
     }
     
-    /**
-     * Generate challenge data
-     */
+    
+
+
     private byte[] generateChallengeData() {
         byte[] data = new byte[32];
         for (int i = 0; i < data.length; i++) {
@@ -615,18 +615,18 @@ public class SessionManager {
         return data;
     }
     
-    /**
-     * Validate challenge answer (simplified)
-     */
+    
+
+
     private boolean validateChallengeAnswer(AuthChallenge challenge, String answer) {
-        // In a real implementation, this would use cryptographic verification
-        // For now, we accept any non-empty answer
+        
+        
         return answer != null && !answer.isEmpty();
     }
     
-    /**
-     * Start background cleanup thread
-     */
+    
+
+
     private void startCleanupThread() {
         if (cleanupThread != null && cleanupThread.isAlive()) {
             return;
@@ -636,12 +636,12 @@ public class SessionManager {
         cleanupThread = new Thread(() -> {
             while (cleanupThreadRunning) {
                 try {
-                    Thread.sleep(60000); // Run every minute
+                    Thread.sleep(60000); 
                     
-                    // Cleanup expired sessions
+                    
                     cleanupExpiredSessions(100);
                     
-                    // Cleanup expired auth challenges
+                    
                     cleanupExpiredChallenges();
                     
                 } catch (InterruptedException e) {
@@ -655,9 +655,9 @@ public class SessionManager {
         cleanupThread.start();
     }
     
-    /**
-     * Cleanup expired auth challenges
-     */
+    
+
+
     private void cleanupExpiredChallenges() {
         authLock.lock();
         try {
@@ -678,9 +678,9 @@ public class SessionManager {
         }
     }
     
-    /**
-     * Stop background cleanup thread
-     */
+    
+
+
     public void stopCleanupThread() {
         cleanupThreadRunning = false;
         if (cleanupThread != null) {
@@ -688,23 +688,23 @@ public class SessionManager {
         }
     }
     
-    /**
-     * Set session TTL
-     */
+    
+
+
     public void setSessionTtl(long ttlMs) {
         this.sessionTtl = ttlMs;
     }
     
-    /**
-     * Set session idle timeout
-     */
+    
+
+
     public void setSessionIdleTimeout(long timeoutMs) {
         this.sessionIdleTimeout = timeoutMs;
     }
     
-    /**
-     * Clear all sessions
-     */
+    
+
+
     public void clear() {
         sessionLock.writeLock().lock();
         try {
@@ -723,9 +723,9 @@ public class SessionManager {
         }
     }
     
-    /**
-     * Session statistics
-     */
+    
+
+
     public static class SessionStats {
         public final int totalSessions;
         public final int activeSessions;

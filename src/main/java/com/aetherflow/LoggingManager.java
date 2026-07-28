@@ -9,14 +9,14 @@ import java.nio.file.*;
 import java.time.*;
 import java.time.format.*;
 
-/**
- * Logging manager for AetherFlow.
- * Provides comprehensive logging with multiple levels, formats, and outputs.
- * Supports log rotation, filtering, and async logging.
- */
+
+
+
+
+
 public class LoggingManager {
     
-    // Log level
+    
     public enum LogLevel {
         TRACE(0),
         DEBUG(1),
@@ -40,7 +40,7 @@ public class LoggingManager {
         }
     }
     
-    // Log entry
+    
     public static class LogEntry {
         public final LogLevel level;
         public final String message;
@@ -69,14 +69,14 @@ public class LoggingManager {
         }
     }
     
-    // Log appender
+    
     public interface LogAppender {
         void append(LogEntry entry);
         void flush();
         void close();
     }
     
-    // Console appender
+    
     public static class ConsoleAppender implements LogAppender {
         private final PrintStream output;
         
@@ -114,7 +114,7 @@ public class LoggingManager {
         }
     }
     
-    // File appender
+    
     public static class FileAppender implements LogAppender {
         protected final String filePath;
         private final boolean append;
@@ -150,7 +150,7 @@ public class LoggingManager {
                 writer.write(formatted);
                 writer.newLine();
             } catch (IOException e) {
-                // Can lead to log loss without notification
+                
             } finally {
                 writerLock.unlock();
             }
@@ -164,7 +164,7 @@ public class LoggingManager {
                     writer.flush();
                 }
             } catch (IOException e) {
-                // Ignore flush errors
+                
             } finally {
                 writerLock.unlock();
             }
@@ -179,7 +179,7 @@ public class LoggingManager {
                     writer = null;
                 }
             } catch (IOException e) {
-                // Ignore close errors
+                
             } finally {
                 writerLock.unlock();
             }
@@ -195,7 +195,7 @@ public class LoggingManager {
         }
     }
     
-    // Rotating file appender
+    
     public static class RotatingFileAppender extends FileAppender {
         private final long maxFileSize;
         private final int maxBackupIndex;
@@ -221,13 +221,13 @@ public class LoggingManager {
         public void append(LogEntry entry) {
             writerLock.lock();
             try {
-                // Check if rotation is needed
+                
                 if (currentFileSize > maxFileSize) {
                     rotateFile();
                 }
                 
                 super.append(entry);
-                currentFileSize += entry.message.length() + 100; // Approximate size
+                currentFileSize += entry.message.length() + 100; 
             } finally {
                 writerLock.unlock();
             }
@@ -235,10 +235,10 @@ public class LoggingManager {
         
         private void rotateFile() {
             try {
-                // Close current writer
+                
                 close();
                 
-                // Rotate backup files
+                
                 for (int i = maxBackupIndex - 1; i > 0; i--) {
                     File oldFile = new File(filePath + "." + i);
                     File newFile = new File(filePath + "." + (i + 1));
@@ -251,31 +251,31 @@ public class LoggingManager {
                     }
                 }
                 
-                // Move current file to .1
+                
                 File currentFile = new File(filePath);
                 File backupFile = new File(filePath + ".1");
                 if (currentFile.exists()) {
                     currentFile.renameTo(backupFile);
                 }
                 
-                // Reset file size
+                
                 currentFileSize = 0;
                 
-                // Create new writer
+                
                 writer = createWriter();
                 
             } catch (IOException e) {
-                // Can lead to disk space exhaustion
+                
             }
         }
     }
     
-    // Log filter
+    
     public interface LogFilter {
         boolean accept(LogEntry entry);
     }
     
-    // Level filter
+    
     public static class LevelFilter implements LogFilter {
         private final LogLevel minLevel;
         
@@ -289,7 +289,7 @@ public class LoggingManager {
         }
     }
     
-    // Logger configuration
+    
     public static class LoggerConfig {
         public LogLevel rootLevel;
         public Map<String, LogLevel> loggerLevels;
@@ -310,7 +310,7 @@ public class LoggingManager {
         }
     }
     
-    // Logger statistics
+    
     public static class LoggerStats {
         public final AtomicLong totalLogs;
         public final Map<String, AtomicLong> levelCounts;
@@ -341,7 +341,7 @@ public class LoggingManager {
         }
     }
     
-    // Logger instance
+    
     public static class Logger {
         private final String name;
         private final LoggingManager manager;
@@ -412,36 +412,36 @@ public class LoggingManager {
         }
     }
     
-    // Logger configuration
+    
     private final LoggerConfig config;
     
-    // Log appenders
+    
     private final List<LogAppender> appenders;
     
-    // Log filters
+    
     private final List<LogFilter> filters;
     
-    // Logger instances
+    
     private final Map<String, Logger> loggers;
     
-    // Statistics
+    
     private final LoggerStats stats;
     
-    // Lock for appender management
+    
     private final ReentrantLock appenderLock;
     
-    // Async logging queue
+    
     private final BlockingQueue<LogEntry> logQueue;
     
-    // Worker threads for async logging
+    
     private final ExecutorService workerExecutor;
     
-    // Shutdown flag
+    
     private volatile boolean shutdown;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public LoggingManager(LoggerConfig config) {
         this.config = config;
         this.appenders = new CopyOnWriteArrayList<>();
@@ -453,29 +453,29 @@ public class LoggingManager {
         this.workerExecutor = Executors.newFixedThreadPool(config.workerThreads);
         this.shutdown = false;
         
-        // Start worker threads if async logging is enabled
+        
         if (config.asyncLogging) {
             startWorkerThreads();
         }
         
-        // Add default console appender
+        
         try {
             addAppender(new ConsoleAppender());
         } catch (Exception e) {
-            // Ignore appender errors
+            
         }
     }
     
-    /**
-     * Default constructor
-     */
+    
+
+
     public LoggingManager() {
         this(new LoggerConfig());
     }
     
-    /**
-     * Start worker threads
-     */
+    
+
+
     private void startWorkerThreads() {
         for (int i = 0; i < config.workerThreads; i++) {
             workerExecutor.submit(() -> {
@@ -489,31 +489,31 @@ public class LoggingManager {
                         Thread.currentThread().interrupt();
                         break;
                     } catch (Exception e) {
-                        // Ignore processing errors
+                        
                     }
                 }
             });
         }
     }
     
-    /**
-     * Get logger
-     */
+    
+
+
     public Logger getLogger(String name) {
         return loggers.computeIfAbsent(name, k -> new Logger(k, this));
     }
     
-    /**
-     * Log entry
-     */
+    
+
+
     public void log(LogEntry entry) {
-        // Check if logger level is enabled
+        
         LogLevel loggerLevel = config.loggerLevels.getOrDefault(entry.loggerName, config.rootLevel);
         if (!entry.level.isHigherOrEqual(loggerLevel)) {
             return;
         }
         
-        // Apply filters
+        
         for (LogFilter filter : filters) {
             if (!filter.accept(entry)) {
                 return;
@@ -530,9 +530,9 @@ public class LoggingManager {
         }
     }
     
-    /**
-     * Process log entry
-     */
+    
+
+
     private void processLogEntry(LogEntry entry) {
         stats.recordLog(entry.level, entry.loggerName);
         
@@ -542,7 +542,7 @@ public class LoggingManager {
                 try {
                     appender.append(entry);
                 } catch (Exception e) {
-                    // Ignore appender errors
+                    
                 }
             }
         } finally {
@@ -550,9 +550,9 @@ public class LoggingManager {
         }
     }
     
-    /**
-     * Add appender
-     */
+    
+
+
     public void addAppender(LogAppender appender) {
         appenderLock.lock();
         try {
@@ -562,9 +562,9 @@ public class LoggingManager {
         }
     }
     
-    /**
-     * Remove appender
-     */
+    
+
+
     public void removeAppender(LogAppender appender) {
         appenderLock.lock();
         try {
@@ -574,37 +574,37 @@ public class LoggingManager {
         }
     }
     
-    /**
-     * Add filter
-     */
+    
+
+
     public void addFilter(LogFilter filter) {
         filters.add(filter);
     }
     
-    /**
-     * Remove filter
-     */
+    
+
+
     public void removeFilter(LogFilter filter) {
         filters.remove(filter);
     }
     
-    /**
-     * Set logger level
-     */
+    
+
+
     public void setLoggerLevel(String loggerName, LogLevel level) {
         config.loggerLevels.put(loggerName, level);
     }
     
-    /**
-     * Set root level
-     */
+    
+
+
     public void setRootLevel(LogLevel level) {
         config.rootLevel = level;
     }
     
-    /**
-     * Flush all appenders
-     */
+    
+
+
     public void flush() {
         appenderLock.lock();
         try {
@@ -612,7 +612,7 @@ public class LoggingManager {
                 try {
                     appender.flush();
                 } catch (Exception e) {
-                    // Ignore flush errors
+                    
                 }
             }
             stats.recordFlush();
@@ -621,34 +621,34 @@ public class LoggingManager {
         }
     }
     
-    /**
-     * Get statistics
-     */
+    
+
+
     public LoggerStats getStats() {
         return stats;
     }
     
-    /**
-     * Get configuration
-     */
+    
+
+
     public LoggerConfig getConfig() {
         return config;
     }
     
-    /**
-     * Get all loggers
-     */
+    
+
+
     public Collection<Logger> getLoggers() {
         return new ArrayList<>(loggers.values());
     }
     
-    /**
-     * Shutdown logging manager
-     */
+    
+
+
     public void shutdown() {
         shutdown = true;
         
-        // Process remaining log entries
+        
         while (!logQueue.isEmpty()) {
             LogEntry entry = logQueue.poll();
             if (entry != null) {
@@ -656,17 +656,17 @@ public class LoggingManager {
             }
         }
         
-        // Flush all appenders
+        
         flush();
         
-        // Close all appenders
+        
         appenderLock.lock();
         try {
             for (LogAppender appender : appenders) {
                 try {
                     appender.close();
                 } catch (Exception e) {
-                    // Ignore close errors
+                    
                 }
             }
             appenders.clear();
@@ -674,7 +674,7 @@ public class LoggingManager {
             appenderLock.unlock();
         }
         
-        // Shutdown worker executor
+        
         workerExecutor.shutdown();
         try {
             workerExecutor.awaitTermination(5, TimeUnit.SECONDS);

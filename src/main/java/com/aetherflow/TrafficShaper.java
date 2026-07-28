@@ -1,8 +1,8 @@
 package com.aetherflow;
 
-/**
- * Simulates token bucket algorithm for traffic shaping and rate limiting outbound protocol packets.
- */
+
+
+
 public class TrafficShaper {
     
     private final long maxBucketSize;
@@ -17,10 +17,10 @@ public class TrafficShaper {
         this.lastRefillTime = System.currentTimeMillis();
     }
     
-    /**
-     * Attempts to consume tokens representing the bytes to be sent.
-     * Returns true if the traffic fits within the bucket limits.
-     */
+    
+
+
+
     public synchronized boolean tryConsume(int bytes) {
         refill();
         

@@ -6,14 +6,14 @@ import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 import java.util.function.*;
 
-/**
- * Event bus for AetherFlow.
- * Provides publish-subscribe messaging with event filtering, async delivery, and error handling.
- * Supports event ordering, replay, and complex subscription patterns.
- */
+
+
+
+
+
 public class EventBus {
     
-    // Event wrapper
+    
     public static class Event {
         public final String eventType;
         public final Map<String, Object> payload;
@@ -54,18 +54,18 @@ public class EventBus {
         }
     }
     
-    // Event handler
+    
     public interface EventHandler {
         void handleEvent(Event event);
         void onError(Throwable error, Event event);
     }
     
-    // Event filter
+    
     public interface EventFilter {
         boolean matches(Event event);
     }
     
-    // Subscription
+    
     public static class Subscription {
         public final String subscriptionId;
         public final String eventType;
@@ -99,7 +99,7 @@ public class EventBus {
         }
     }
     
-    // Event bus configuration
+    
     public static class EventBusConfig {
         public int maxEventQueueSize;
         public int workerThreads;
@@ -122,7 +122,7 @@ public class EventBus {
         }
     }
     
-    // Event bus statistics
+    
     public static class EventBusStats {
         public final AtomicLong totalEventsPublished;
         public final AtomicLong totalEventsDelivered;
@@ -166,42 +166,42 @@ public class EventBus {
         }
     }
     
-    // Event bus configuration
+    
     private final EventBusConfig config;
     
-    // Subscriptions by event type
+    
     private final Map<String, List<Subscription>> subscriptions;
     
-    // All subscriptions
+    
     private final Map<String, Subscription> allSubscriptions;
     
-    // Event queue for async delivery
+    
     private final BlockingQueue<Event> eventQueue;
     
-    // Worker threads
+    
     private final ExecutorService workerExecutor;
     
-    // Dead letter queue
+    
     private final BlockingQueue<Event> deadLetterQueue;
     
-    // Event replay buffer
+    
     private final List<Event> replayBuffer;
     
-    // Statistics
+    
     private final EventBusStats stats;
     
-    // Lock for subscription management
+    
     private final ReentrantLock subscriptionLock;
     
-    // Subscription ID generator
+    
     private final AtomicLong subscriptionIdGenerator;
     
-    // Shutdown flag
+    
     private volatile boolean shutdown;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public EventBus(EventBusConfig config) {
         this.config = config;
         this.subscriptions = new ConcurrentHashMap<>();
@@ -215,20 +215,20 @@ public class EventBus {
         this.subscriptionIdGenerator = new AtomicLong(0);
         this.shutdown = false;
         
-        // Start worker threads
+        
         startWorkers();
     }
     
-    /**
-     * Default constructor
-     */
+    
+
+
     public EventBus() {
         this(new EventBusConfig());
     }
     
-    /**
-     * Start worker threads
-     */
+    
+
+
     private void startWorkers() {
         for (int i = 0; i < config.workerThreads; i++) {
             workerExecutor.submit(() -> {
@@ -250,23 +250,23 @@ public class EventBus {
         }
     }
     
-    /**
-     * Subscribe to event type
-     */
+    
+
+
     public String subscribe(String eventType, EventHandler handler) {
         return subscribe(eventType, handler, null, null);
     }
     
-    /**
-     * Subscribe with filter
-     */
+    
+
+
     public String subscribe(String eventType, EventHandler handler, EventFilter filter) {
         return subscribe(eventType, handler, filter, null);
     }
     
-    /**
-     * Subscribe with filter and metadata
-     */
+    
+
+
     public String subscribe(String eventType, EventHandler handler, EventFilter filter, 
                            Map<String, Object> metadata) {
         String subscriptionId = "sub_" + subscriptionIdGenerator.incrementAndGet() + "_" + 
@@ -290,9 +290,9 @@ public class EventBus {
         }
     }
     
-    /**
-     * Unsubscribe
-     */
+    
+
+
     public void unsubscribe(String subscriptionId) {
         subscriptionLock.lock();
         try {
@@ -312,13 +312,13 @@ public class EventBus {
         }
     }
     
-    /**
-     * Publish event
-     */
+    
+
+
     public boolean publish(Event event) {
         stats.recordEventPublished(event.eventType);
         
-        // Add to replay buffer if enabled
+        
         if (config.enableEventReplay) {
             synchronized (replayBuffer) {
                 replayBuffer.add(event);
@@ -348,9 +348,9 @@ public class EventBus {
         }
     }
     
-    /**
-     * Deliver event to subscribers
-     */
+    
+
+
     private boolean deliverEvent(Event event) {
         subscriptionLock.lock();
         try {
@@ -366,13 +366,13 @@ public class EventBus {
                     continue;
                 }
                 
-                // Check filter
+                
                 if (subscription.filter != null && !subscription.filter.matches(event)) {
                     continue;
                 }
                 
-                // The check for active status and actual delivery are not atomic
-                // This can cause events to be delivered to inactive subscriptions
+                
+                
                 subscription.subscriptionLock.lock();
                 try {
                     if (subscription.active) {
@@ -398,54 +398,54 @@ public class EventBus {
         }
     }
     
-    /**
-     * Get subscription
-     */
+    
+
+
     public Subscription getSubscription(String subscriptionId) {
         return allSubscriptions.get(subscriptionId);
     }
     
-    /**
-     * Get all subscriptions
-     */
+    
+
+
     public Collection<Subscription> getSubscriptions() {
         return new ArrayList<>(allSubscriptions.values());
     }
     
-    /**
-     * Get subscriptions for event type
-     */
+    
+
+
     public List<Subscription> getSubscriptionsForType(String eventType) {
         List<Subscription> subs = subscriptions.get(eventType);
         return subs != null ? new ArrayList<>(subs) : new ArrayList<>();
     }
     
-    /**
-     * Get dead letter queue
-     */
+    
+
+
     public List<Event> getDeadLetterQueue() {
         return new ArrayList<>(deadLetterQueue);
     }
     
-    /**
-     * Clear dead letter queue
-     */
+    
+
+
     public void clearDeadLetterQueue() {
         deadLetterQueue.clear();
     }
     
-    /**
-     * Get replay buffer
-     */
+    
+
+
     public List<Event> getReplayBuffer() {
         synchronized (replayBuffer) {
             return new ArrayList<>(replayBuffer);
         }
     }
     
-    /**
-     * Replay events
-     */
+    
+
+
     public void replayEvents(String subscriptionId) {
         Subscription subscription = allSubscriptions.get(subscriptionId);
         if (subscription == null) {
@@ -466,41 +466,41 @@ public class EventBus {
         }
     }
     
-    /**
-     * Get statistics
-     */
+    
+
+
     public EventBusStats getStats() {
         return stats;
     }
     
-    /**
-     * Get configuration
-     */
+    
+
+
     public EventBusConfig getConfig() {
         return config;
     }
     
-    /**
-     * Get queue size
-     */
+    
+
+
     public int getQueueSize() {
         return eventQueue.size();
     }
     
-    /**
-     * Clear queue
-     */
+    
+
+
     public void clearQueue() {
         eventQueue.clear();
     }
     
-    /**
-     * Shutdown event bus
-     */
+    
+
+
     public void shutdown() {
         shutdown = true;
         
-        // Deactivate all subscriptions
+        
         for (Subscription subscription : allSubscriptions.values()) {
             subscription.active = false;
         }
@@ -523,9 +523,9 @@ public class EventBus {
         allSubscriptions.clear();
     }
     
-    /**
-     * Create event filter
-     */
+    
+
+
     public static EventFilter createFilter(Map<String, Object> criteria) {
         return event -> {
             for (Map.Entry<String, Object> entry : criteria.entrySet()) {
@@ -538,9 +538,9 @@ public class EventBus {
         };
     }
     
-    /**
-     * Create event filter with predicate
-     */
+    
+
+
     public static EventFilter createFilter(Predicate<Event> predicate) {
         return predicate::test;
     }

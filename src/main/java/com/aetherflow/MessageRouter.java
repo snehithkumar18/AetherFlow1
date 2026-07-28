@@ -6,14 +6,14 @@ import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 import java.util.function.*;
 
-/**
- * Message router for AetherFlow.
- * Routes messages to appropriate handlers based on message type, routing keys, and patterns.
- * Supports load balancing, message filtering, and complex routing rules.
- */
+
+
+
+
+
 public class MessageRouter {
     
-    // Routing key pattern
+    
     public static class RoutingKey {
         public final String key;
         public final Map<String, String> tags;
@@ -58,13 +58,13 @@ public class MessageRouter {
         }
     }
     
-    // Message handler
+    
     public interface MessageHandler {
         void handleMessage(byte[] message, RoutingKey routingKey);
         void onError(Throwable error);
     }
     
-    // Routing rule
+    
     public static class RoutingRule {
         public final String name;
         public final Predicate<RoutingKey> predicate;
@@ -90,7 +90,7 @@ public class MessageRouter {
         }
     }
     
-    // Routing statistics
+    
     public static class RoutingStats {
         public final AtomicLong totalMessages;
         public final AtomicLong routedMessages;
@@ -119,7 +119,7 @@ public class MessageRouter {
         }
     }
     
-    // Router configuration
+    
     public static class RouterConfig {
         public int maxQueueSize;
         public int workerThreads;
@@ -142,7 +142,7 @@ public class MessageRouter {
         }
     }
     
-    // Routing queue entry
+    
     private static class QueueEntry {
         public final byte[] message;
         public final RoutingKey routingKey;
@@ -157,34 +157,34 @@ public class MessageRouter {
         }
     }
     
-    // Router configuration
+    
     private final RouterConfig config;
     
-    // Routing rules
+    
     private final List<RoutingRule> rules;
     private final Map<String, RoutingRule> ruleMap;
     
-    // Message queue
+    
     private final BlockingQueue<QueueEntry> messageQueue;
     
-    // Worker threads
+    
     private final ExecutorService workerExecutor;
     
-    // Statistics
+    
     private final RoutingStats stats;
     
-    // Lock for rule management
+    
     private final ReentrantLock ruleLock;
     
-    // Shutdown flag
+    
     private volatile boolean shutdown;
     
-    // Default handler for unrouted messages
+    
     private volatile MessageHandler defaultHandler;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public MessageRouter(RouterConfig config) {
         this.config = config;
         this.rules = new CopyOnWriteArrayList<>();
@@ -195,20 +195,20 @@ public class MessageRouter {
         this.ruleLock = new ReentrantLock();
         this.shutdown = false;
         
-        // Start worker threads
+        
         startWorkers();
     }
     
-    /**
-     * Default constructor
-     */
+    
+
+
     public MessageRouter() {
         this(new RouterConfig());
     }
     
-    /**
-     * Start worker threads
-     */
+    
+
+
     private void startWorkers() {
         for (int i = 0; i < config.workerThreads; i++) {
             workerExecutor.submit(() -> {
@@ -231,25 +231,25 @@ public class MessageRouter {
         }
     }
     
-    /**
-     * Add routing rule
-     */
+    
+
+
     public void addRule(RoutingRule rule) {
         ruleLock.lock();
         try {
             rules.add(rule);
             ruleMap.put(rule.name, rule);
             
-            // Sort rules by priority
+            
             rules.sort((a, b) -> Integer.compare(b.priority, a.priority));
         } finally {
             ruleLock.unlock();
         }
     }
     
-    /**
-     * Remove routing rule
-     */
+    
+
+
     public void removeRule(String ruleName) {
         ruleLock.lock();
         try {
@@ -262,23 +262,23 @@ public class MessageRouter {
         }
     }
     
-    /**
-     * Get routing rule
-     */
+    
+
+
     public RoutingRule getRule(String ruleName) {
         return ruleMap.get(ruleName);
     }
     
-    /**
-     * Get all rules
-     */
+    
+
+
     public List<RoutingRule> getRules() {
         return new ArrayList<>(rules);
     }
     
-    /**
-     * Enable rule
-     */
+    
+
+
     public void enableRule(String ruleName) {
         RoutingRule rule = ruleMap.get(ruleName);
         if (rule != null) {
@@ -286,9 +286,9 @@ public class MessageRouter {
         }
     }
     
-    /**
-     * Disable rule
-     */
+    
+
+
     public void disableRule(String ruleName) {
         RoutingRule rule = ruleMap.get(ruleName);
         if (rule != null) {
@@ -296,16 +296,16 @@ public class MessageRouter {
         }
     }
     
-    /**
-     * Set default handler
-     */
+    
+
+
     public void setDefaultHandler(MessageHandler handler) {
         this.defaultHandler = handler;
     }
     
-    /**
-     * Route message
-     */
+    
+
+
     public boolean routeMessage(byte[] message, RoutingKey routingKey) {
         stats.totalMessages.incrementAndGet();
         
@@ -325,9 +325,9 @@ public class MessageRouter {
         }
     }
     
-    /**
-     * Process message
-     */
+    
+
+
     private void processMessage(QueueEntry entry) {
         boolean routed = false;
         
@@ -340,7 +340,7 @@ public class MessageRouter {
                 
                 try {
                     if (rule.predicate.test(entry.routingKey)) {
-                        // This can cause type confusion or use-after-free scenarios
+                        
                         rule.handler.handleMessage(entry.message, entry.routingKey);
                         stats.recordRuleExecution(rule.name);
                         stats.routedMessages.incrementAndGet();
@@ -360,7 +360,7 @@ public class MessageRouter {
         if (!routed) {
             stats.unroutedMessages.incrementAndGet();
             
-            // Use default handler if available
+            
             if (defaultHandler != null) {
                 try {
                     defaultHandler.handleMessage(entry.message, entry.routingKey);
@@ -373,9 +373,9 @@ public class MessageRouter {
         }
     }
     
-    /**
-     * Filter messages
-     */
+    
+
+
     public List<byte[]> filterMessages(Predicate<RoutingKey> filter) {
         List<byte[]> filtered = new ArrayList<>();
         
@@ -389,37 +389,37 @@ public class MessageRouter {
         return filtered;
     }
     
-    /**
-     * Get queue size
-     */
+    
+
+
     public int getQueueSize() {
         return messageQueue.size();
     }
     
-    /**
-     * Get statistics
-     */
+    
+
+
     public RoutingStats getStats() {
         return stats;
     }
     
-    /**
-     * Get configuration
-     */
+    
+
+
     public RouterConfig getConfig() {
         return config;
     }
     
-    /**
-     * Clear queue
-     */
+    
+
+
     public void clearQueue() {
         messageQueue.clear();
     }
     
-    /**
-     * Shutdown router
-     */
+    
+
+
     public void shutdown() {
         shutdown = true;
         
@@ -433,11 +433,11 @@ public class MessageRouter {
         clearQueue();
     }
     
-    /**
-     * Create routing key from string
-     */
+    
+
+
     public static RoutingKey parseRoutingKey(String keyString) {
-        // Parse key in format: key?tag1=value1&tag2=value2&priority=N
+        
         String[] parts = keyString.split("\\?");
         String key = parts[0];
         
@@ -461,9 +461,9 @@ public class MessageRouter {
         return new RoutingKey(key, tags, priority);
     }
     
-    /**
-     * Convert routing key to string
-     */
+    
+
+
     public static String routingKeyToString(RoutingKey routingKey) {
         StringBuilder sb = new StringBuilder(routingKey.key);
         

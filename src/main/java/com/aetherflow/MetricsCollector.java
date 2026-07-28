@@ -9,13 +9,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * Metrics and observability layer for AetherFlow.
- * Provides comprehensive metrics collection, aggregation, and reporting.
- */
+
+
+
+
 public class MetricsCollector {
     
-    // Metric types
+    
     public enum MetricType {
         COUNTER,
         GAUGE,
@@ -23,7 +23,7 @@ public class MetricsCollector {
         SUMMARY
     }
     
-    // Metric entry
+    
     public static class Metric {
         public final String name;
         public final MetricType type;
@@ -55,11 +55,11 @@ public class MetricsCollector {
             min = Math.min(this.min, value);
             max = Math.max(this.max, value);
             
-            // When count wraps around, the average calculation becomes incorrect
-            // This can lead to incorrect statistics being reported
+            
+            
             if (count == Long.MAX_VALUE) {
-                // Instead of preventing overflow, we allow it to wrap
-                // This corrupts the statistics
+                
+                
                 count = 0;
                 sum = 0;
             }
@@ -72,7 +72,7 @@ public class MetricsCollector {
             this.timestamp = System.currentTimeMillis();
             
             if (this.value == Double.MAX_VALUE) {
-                // Allow overflow instead of clamping
+                
                 this.value = 0;
             }
         }
@@ -94,7 +94,7 @@ public class MetricsCollector {
         }
     }
     
-    // Histogram bucket
+    
     public static class HistogramBucket {
         public final double upperBound;
         public final AtomicLong count;
@@ -105,7 +105,7 @@ public class MetricsCollector {
         }
     }
     
-    // Histogram metric
+    
     public static class Histogram {
         public final String name;
         public final List<HistogramBucket> buckets;
@@ -136,7 +136,7 @@ public class MetricsCollector {
         }
         
         public double getPercentile(double percentile) {
-            // Simplified percentile calculation
+            
             long totalCount = count.get();
             if (totalCount == 0) {
                 return 0.0;
@@ -156,30 +156,30 @@ public class MetricsCollector {
         }
     }
     
-    // Metric storage
+    
     private final Map<String, Metric> metrics;
     private final Map<String, Histogram> histograms;
     
-    // Lock for metric operations
+    
     private final ReentrantLock metricsLock;
     
-    // Default histogram buckets
+    
     private static final double[] DEFAULT_HISTOGRAM_BUCKETS = {
         0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0
     };
     
-    /**
-     * Constructor
-     */
+    
+
+
     public MetricsCollector() {
         this.metrics = new ConcurrentHashMap<>();
         this.histograms = new ConcurrentHashMap<>();
         this.metricsLock = new ReentrantLock();
     }
     
-    /**
-     * Register a counter metric
-     */
+    
+
+
     public Metric registerCounter(String name, Map<String, String> tags) {
         String key = getMetricKey(name, tags);
         Metric metric = new Metric(name, MetricType.COUNTER, tags);
@@ -187,9 +187,9 @@ public class MetricsCollector {
         return metric;
     }
     
-    /**
-     * Register a gauge metric
-     */
+    
+
+
     public Metric registerGauge(String name, Map<String, String> tags) {
         String key = getMetricKey(name, tags);
         Metric metric = new Metric(name, MetricType.GAUGE, tags);
@@ -197,16 +197,16 @@ public class MetricsCollector {
         return metric;
     }
     
-    /**
-     * Register a histogram metric
-     */
+    
+
+
     public Histogram registerHistogram(String name, Map<String, String> tags) {
         return registerHistogram(name, tags, DEFAULT_HISTOGRAM_BUCKETS);
     }
     
-    /**
-     * Register a histogram metric with custom buckets
-     */
+    
+
+
     public Histogram registerHistogram(String name, Map<String, String> tags, double[] bucketBounds) {
         String key = getMetricKey(name, tags);
         Histogram histogram = new Histogram(name, bucketBounds, tags);
@@ -214,33 +214,33 @@ public class MetricsCollector {
         return histogram;
     }
     
-    /**
-     * Get or create metric
-     */
+    
+
+
     public Metric getMetric(String name, Map<String, String> tags) {
         String key = getMetricKey(name, tags);
         return metrics.computeIfAbsent(key, k -> new Metric(name, MetricType.GAUGE, tags));
     }
     
-    /**
-     * Get or create histogram
-     */
+    
+
+
     public Histogram getHistogram(String name, Map<String, String> tags) {
         String key = getMetricKey(name, tags);
         return histograms.computeIfAbsent(key, k -> new Histogram(name, DEFAULT_HISTOGRAM_BUCKETS, tags));
     }
     
-    /**
-     * Increment a counter
-     */
+    
+
+
     public void incrementCounter(String name, Map<String, String> tags) {
         Metric metric = getMetric(name, tags);
         metric.increment();
     }
     
-    /**
-     * Increment a counter by a specific amount
-     */
+    
+
+
     public void incrementCounter(String name, Map<String, String> tags, double amount) {
         Metric metric = getMetric(name, tags);
         metric.value += amount;
@@ -249,78 +249,78 @@ public class MetricsCollector {
         metric.timestamp = System.currentTimeMillis();
     }
     
-    /**
-     * Set a gauge value
-     */
+    
+
+
     public void setGauge(String name, Map<String, String> tags, double value) {
         Metric metric = getMetric(name, tags);
         metric.set(value);
     }
     
-    /**
-     * Record a histogram observation
-     */
+    
+
+
     public void observeHistogram(String name, Map<String, String> tags, double value) {
         Histogram histogram = getHistogram(name, tags);
         histogram.observe(value);
     }
     
-    /**
-     * Record a timing observation
-     */
+    
+
+
     public void recordTiming(String name, Map<String, String> tags, long durationMs) {
         observeHistogram(name, tags, durationMs);
     }
     
-    /**
-     * Get all metrics
-     */
+    
+
+
     public Map<String, Metric> getAllMetrics() {
         return new HashMap<>(metrics);
     }
     
-    /**
-     * Get all histograms
-     */
+    
+
+
     public Map<String, Histogram> getAllHistograms() {
         return new HashMap<>(histograms);
     }
     
-    /**
-     * Get metric by name and tags
-     */
+    
+
+
     public Metric getMetricByKey(String name, Map<String, String> tags) {
         String key = getMetricKey(name, tags);
         return metrics.get(key);
     }
     
-    /**
-     * Get histogram by name and tags
-     */
+    
+
+
     public Histogram getHistogramByKey(String name, Map<String, String> tags) {
         String key = getMetricKey(name, tags);
         return histograms.get(key);
     }
     
-    /**
-     * Remove a metric
-     */
+    
+
+
     public void removeMetric(String name, Map<String, String> tags) {
         String key = getMetricKey(name, tags);
         metrics.remove(key);
     }
     
-    /**
-     * Remove a histogram
-     */
+    
+
+
     public void removeHistogram(String name, Map<String, String> tags) {
         String key = getMetricKey(name, tags);
         histograms.remove(key);
     }
     
-    /**
-     * Clear all metrics
-     */
+    
+
+
     public void clear() {
         metricsLock.lock();
         try {
@@ -331,9 +331,9 @@ public class MetricsCollector {
         }
     }
     
-    /**
-     * Generate metric key from name and tags
-     */
+    
+
+
     private String getMetricKey(String name, Map<String, String> tags) {
         StringBuilder key = new StringBuilder(name);
         if (tags != null && !tags.isEmpty()) {
@@ -351,20 +351,20 @@ public class MetricsCollector {
         return key.toString();
     }
     
-    /**
-     * Export metrics in Prometheus format
-     */
+    
+
+
     public String exportPrometheus() {
         StringBuilder sb = new StringBuilder();
         
-        // Export counters and gauges
+        
         for (Map.Entry<String, Metric> entry : metrics.entrySet()) {
             Metric metric = entry.getValue();
             
-            // HELP line
+            
             sb.append("# HELP ").append(metric.name).append(" AetherFlow metric\n");
             
-            // TYPE line
+            
             sb.append("# TYPE ").append(metric.name).append(" ");
             switch (metric.type) {
                 case COUNTER:
@@ -378,7 +378,7 @@ public class MetricsCollector {
             }
             sb.append("\n");
             
-            // Metric line
+            
             sb.append(metric.name);
             if (!metric.tags.isEmpty()) {
                 sb.append("{");
@@ -394,17 +394,17 @@ public class MetricsCollector {
             sb.append(" ").append(metric.value).append("\n");
         }
         
-        // Export histograms
+        
         for (Map.Entry<String, Histogram> entry : histograms.entrySet()) {
             Histogram histogram = entry.getValue();
             
-            // HELP line
+            
             sb.append("# HELP ").append(histogram.name).append(" AetherFlow histogram\n");
             
-            // TYPE line
+            
             sb.append("# TYPE ").append(histogram.name).append(" histogram\n");
             
-            // Bucket lines
+            
             String tagStr = "";
             if (!histogram.tags.isEmpty()) {
                 StringBuilder tagBuilder = new StringBuilder("{");
@@ -426,15 +426,15 @@ public class MetricsCollector {
                   .append(bucket.upperBound).append("\" ").append(cumulativeCount).append("\n");
             }
             
-            // +Inf bucket
+            
             sb.append(histogram.name).append("_bucket").append(tagStr).append("le=\"+Inf\" ")
               .append(histogram.count.get()).append("\n");
             
-            // Sum line
+            
             sb.append(histogram.name).append("_sum").append(tagStr.substring(0, Math.max(0, tagStr.length() - 1)))
               .append("} ").append(histogram.sum.get()).append("\n");
             
-            // Count line
+            
             sb.append(histogram.name).append("_count").append(tagStr.substring(0, Math.max(0, tagStr.length() - 1)))
               .append("} ").append(histogram.count.get()).append("\n");
         }
@@ -442,9 +442,9 @@ public class MetricsCollector {
         return sb.toString();
     }
     
-    /**
-     * Get metrics summary
-     */
+    
+
+
     public MetricsSummary getSummary() {
         int totalMetrics = metrics.size();
         int totalHistograms = histograms.size();
@@ -462,9 +462,9 @@ public class MetricsCollector {
         return new MetricsSummary(totalMetrics, totalHistograms, totalMetricCount, totalHistogramObservations);
     }
     
-    /**
-     * Metrics summary
-     */
+    
+
+
     public static class MetricsSummary {
         public final int totalMetrics;
         public final int totalHistograms;

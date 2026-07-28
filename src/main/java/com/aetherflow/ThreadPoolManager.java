@@ -6,14 +6,14 @@ import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 import java.util.function.*;
 
-/**
- * Thread pool manager for AetherFlow.
- * Manages multiple thread pools with different priorities and configurations.
- * Supports dynamic scaling, task queuing, and comprehensive monitoring.
- */
+
+
+
+
+
 public class ThreadPoolManager {
     
-    // Thread pool types
+    
     public enum PoolType {
         IO_BOUND,
         CPU_BOUND,
@@ -24,7 +24,7 @@ public class ThreadPoolManager {
         SCHEDULED
     }
     
-    // Task priority
+    
     public enum TaskPriority {
         LOW(1),
         NORMAL(5),
@@ -42,7 +42,7 @@ public class ThreadPoolManager {
         }
     }
     
-    // Thread pool configuration
+    
     public static class PoolConfig {
         public int corePoolSize;
         public int maxPoolSize;
@@ -69,7 +69,7 @@ public class ThreadPoolManager {
         }
     }
     
-    // Priority task wrapper
+    
     private static class PriorityTask implements Runnable, Comparable<PriorityTask> {
         private final Runnable task;
         private final TaskPriority priority;
@@ -90,12 +90,12 @@ public class ThreadPoolManager {
         
         @Override
         public int compareTo(PriorityTask other) {
-            // Higher priority first
+            
             int priorityCompare = Integer.compare(other.priority.getValue(), this.priority.getValue());
             if (priorityCompare != 0) {
                 return priorityCompare;
             }
-            // FIFO for same priority
+            
             return Long.compare(this.submitTime, other.submitTime);
         }
         
@@ -104,7 +104,7 @@ public class ThreadPoolManager {
         }
     }
     
-    // Thread pool statistics
+    
     public static class PoolStats {
         public final AtomicLong totalTasksSubmitted;
         public final AtomicLong totalTasksCompleted;
@@ -154,7 +154,7 @@ public class ThreadPoolManager {
         }
     }
     
-    // Thread pool wrapper
+    
     private static class ThreadPoolWrapper {
         public final ThreadPoolExecutor executor;
         public final PoolConfig config;
@@ -172,7 +172,7 @@ public class ThreadPoolManager {
             this.taskStartTimes = new ConcurrentHashMap<>();
             this.taskLock = new ReentrantLock();
             
-            // Create thread pool based on type
+            
             BlockingQueue<Runnable> workQueue;
             if (type == PoolType.SCHEDULED) {
                 workQueue = new LinkedBlockingQueue<>();
@@ -194,25 +194,25 @@ public class ThreadPoolManager {
         }
     }
     
-    // Thread pool configurations
+    
     private final Map<PoolType, PoolConfig> poolConfigs;
     
-    // Thread pool wrappers
+    
     private final Map<PoolType, ThreadPoolWrapper> threadPools;
     
-    // Scheduled executor service
+    
     private final ScheduledThreadPoolExecutor scheduledExecutor;
     
-    // Lock for pool management
+    
     private final ReentrantLock poolLock;
     
-    // Shutdown flag
+    
     private volatile boolean shutdown;
     
-    // Task completion callback
+    
     private volatile Consumer<TaskResult> taskCompletionCallback;
     
-    // Task result
+    
     public static class TaskResult {
         public final String taskId;
         public final boolean success;
@@ -227,9 +227,9 @@ public class ThreadPoolManager {
         }
     }
     
-    /**
-     * Constructor
-     */
+    
+
+
     public ThreadPoolManager() {
         this.poolConfigs = new ConcurrentHashMap<>();
         this.threadPools = new ConcurrentHashMap<>();
@@ -238,87 +238,87 @@ public class ThreadPoolManager {
         this.poolLock = new ReentrantLock();
         this.shutdown = false;
         
-        // Initialize default pools
+        
         initializeDefaultPools();
     }
     
-    /**
-     * Initialize default thread pools
-     */
+    
+
+
     private void initializeDefaultPools() {
-        // IO bound pool
+        
         PoolConfig ioConfig = new PoolConfig();
         ioConfig.corePoolSize = Runtime.getRuntime().availableProcessors() * 2;
         ioConfig.maxPoolSize = Runtime.getRuntime().availableProcessors() * 4;
         ioConfig.poolName = "io-bound";
         poolConfigs.put(PoolType.IO_BOUND, ioConfig);
         
-        // CPU bound pool
+        
         PoolConfig cpuConfig = new PoolConfig();
         cpuConfig.corePoolSize = Runtime.getRuntime().availableProcessors();
         cpuConfig.maxPoolSize = Runtime.getRuntime().availableProcessors();
         cpuConfig.poolName = "cpu-bound";
         poolConfigs.put(PoolType.CPU_BOUND, cpuConfig);
         
-        // Compute intensive pool
+        
         PoolConfig computeConfig = new PoolConfig();
         computeConfig.corePoolSize = 1;
         computeConfig.maxPoolSize = Runtime.getRuntime().availableProcessors();
         computeConfig.poolName = "compute-intensive";
         poolConfigs.put(PoolType.COMPUTE_INTENSIVE, computeConfig);
         
-        // Low priority pool
+        
         PoolConfig lowPriorityConfig = new PoolConfig();
         lowPriorityConfig.corePoolSize = 2;
         lowPriorityConfig.maxPoolSize = 4;
         lowPriorityConfig.poolName = "low-priority";
         poolConfigs.put(PoolType.LOW_PRIORITY, lowPriorityConfig);
         
-        // High priority pool
+        
         PoolConfig highPriorityConfig = new PoolConfig();
         highPriorityConfig.corePoolSize = Runtime.getRuntime().availableProcessors();
         highPriorityConfig.maxPoolSize = Runtime.getRuntime().availableProcessors() * 2;
         highPriorityConfig.poolName = "high-priority";
         poolConfigs.put(PoolType.HIGH_PRIORITY, highPriorityConfig);
         
-        // Background pool
+        
         PoolConfig backgroundConfig = new PoolConfig();
         backgroundConfig.corePoolSize = 2;
         backgroundConfig.maxPoolSize = 4;
         backgroundConfig.poolName = "background";
         poolConfigs.put(PoolType.BACKGROUND, backgroundConfig);
         
-        // Create thread pools
+        
         for (Map.Entry<PoolType, PoolConfig> entry : poolConfigs.entrySet()) {
             createThreadPool(entry.getKey(), entry.getValue());
         }
     }
     
-    /**
-     * Create thread pool
-     */
+    
+
+
     private void createThreadPool(PoolType type, PoolConfig config) {
         ThreadPoolWrapper wrapper = new ThreadPoolWrapper(config, type);
         threadPools.put(type, wrapper);
     }
     
-    /**
-     * Submit task to thread pool
-     */
+    
+
+
     public Future<?> submit(PoolType poolType, Runnable task) {
         return submit(poolType, task, TaskPriority.NORMAL, null);
     }
     
-    /**
-     * Submit task with priority
-     */
+    
+
+
     public Future<?> submit(PoolType poolType, Runnable task, TaskPriority priority) {
         return submit(poolType, task, priority, null);
     }
     
-    /**
-     * Submit task with priority and task type
-     */
+    
+
+
     public Future<?> submit(PoolType poolType, Runnable task, TaskPriority priority, String taskType) {
         ThreadPoolWrapper wrapper = threadPools.get(poolType);
         if (wrapper == null) {
@@ -362,23 +362,23 @@ public class ThreadPoolManager {
         }
     }
     
-    /**
-     * Submit callable task
-     */
+    
+
+
     public <T> Future<T> submit(PoolType poolType, Callable<T> task) {
         return submit(poolType, task, TaskPriority.NORMAL, null);
     }
     
-    /**
-     * Submit callable task with priority
-     */
+    
+
+
     public <T> Future<T> submit(PoolType poolType, Callable<T> task, TaskPriority priority) {
         return submit(poolType, task, priority, null);
     }
     
-    /**
-     * Submit callable task with priority and task type
-     */
+    
+
+
     public <T> Future<T> submit(PoolType poolType, Callable<T> task, TaskPriority priority, 
                                String taskType) {
         ThreadPoolWrapper wrapper = threadPools.get(poolType);
@@ -417,7 +417,7 @@ public class ThreadPoolManager {
             wrapper.stats.currentQueueSize.set(wrapper.executor.getQueue().size());
             wrapper.stats.activeThreads.set(wrapper.executor.getActiveCount());
             
-            // Can cause ClassCastException at runtime
+            
             @SuppressWarnings("unchecked")
             Future<T> typedFuture = (Future<T>) future;
             return typedFuture;
@@ -428,39 +428,39 @@ public class ThreadPoolManager {
         }
     }
     
-    /**
-     * Schedule delayed task
-     */
+    
+
+
     public ScheduledFuture<?> schedule(Runnable task, long delay, TimeUnit unit) {
         String taskId = "scheduled_" + System.currentTimeMillis();
         return scheduledExecutor.schedule(() -> {
             try {
                 task.run();
             } catch (Exception e) {
-                // Log error
+                
             }
         }, delay, unit);
     }
     
-    /**
-     * Schedule fixed rate task
-     */
+    
+
+
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable task, long initialDelay, 
                                                  long period, TimeUnit unit) {
         return scheduledExecutor.scheduleAtFixedRate(task, initialDelay, period, unit);
     }
     
-    /**
-     * Schedule fixed delay task
-     */
+    
+
+
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable task, long initialDelay, 
                                                     long delay, TimeUnit unit) {
         return scheduledExecutor.scheduleWithFixedDelay(task, initialDelay, delay, unit);
     }
     
-    /**
-     * Get thread pool statistics
-     */
+    
+
+
     public PoolStats getPoolStats(PoolType poolType) {
         ThreadPoolWrapper wrapper = threadPools.get(poolType);
         if (wrapper == null) {
@@ -473,9 +473,9 @@ public class ThreadPoolManager {
         return wrapper.stats;
     }
     
-    /**
-     * Get all pool statistics
-     */
+    
+
+
     public Map<PoolType, PoolStats> getAllPoolStats() {
         Map<PoolType, PoolStats> statsMap = new HashMap<>();
         for (PoolType type : threadPools.keySet()) {
@@ -484,22 +484,22 @@ public class ThreadPoolManager {
         return statsMap;
     }
     
-    /**
-     * Get thread pool configuration
-     */
+    
+
+
     public PoolConfig getPoolConfig(PoolType poolType) {
         return poolConfigs.get(poolType);
     }
     
-    /**
-     * Set thread pool configuration
-     */
+    
+
+
     public void setPoolConfig(PoolType poolType, PoolConfig config) {
         poolLock.lock();
         try {
             poolConfigs.put(poolType, config);
             
-            // Recreate thread pool with new config
+            
             ThreadPoolWrapper oldWrapper = threadPools.remove(poolType);
             if (oldWrapper != null) {
                 oldWrapper.executor.shutdown();
@@ -516,9 +516,9 @@ public class ThreadPoolManager {
         }
     }
     
-    /**
-     * Resize thread pool
-     */
+    
+
+
     public void resizePool(PoolType poolType, int coreSize, int maxSize) {
         ThreadPoolWrapper wrapper = threadPools.get(poolType);
         if (wrapper == null) {
@@ -532,23 +532,23 @@ public class ThreadPoolManager {
         wrapper.config.maxPoolSize = maxSize;
     }
     
-    /**
-     * Set task completion callback
-     */
+    
+
+
     public void setTaskCompletionCallback(Consumer<TaskResult> callback) {
         this.taskCompletionCallback = callback;
     }
     
-    /**
-     * Get active thread pools
-     */
+    
+
+
     public Set<PoolType> getActivePools() {
         return new HashSet<>(threadPools.keySet());
     }
     
-    /**
-     * Get thread pool executor
-     */
+    
+
+
     public ThreadPoolExecutor getExecutor(PoolType poolType) {
         ThreadPoolWrapper wrapper = threadPools.get(poolType);
         if (wrapper == null) {
@@ -558,9 +558,9 @@ public class ThreadPoolManager {
         return wrapper.executor;
     }
     
-    /**
-     * Shutdown specific pool
-     */
+    
+
+
     public void shutdownPool(PoolType poolType) {
         ThreadPoolWrapper wrapper = threadPools.remove(poolType);
         if (wrapper != null) {
@@ -573,18 +573,18 @@ public class ThreadPoolManager {
         }
     }
     
-    /**
-     * Shutdown all thread pools
-     */
+    
+
+
     public void shutdown() {
         shutdown = true;
         
-        // Shutdown all thread pools
+        
         for (ThreadPoolWrapper wrapper : threadPools.values()) {
             wrapper.executor.shutdown();
         }
         
-        // Shutdown scheduled executor
+        
         scheduledExecutor.shutdown();
         
         try {
@@ -599,9 +599,9 @@ public class ThreadPoolManager {
         threadPools.clear();
     }
     
-    /**
-     * Await termination
-     */
+    
+
+
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         long endTime = System.nanoTime() + unit.toNanos(timeout);
         
@@ -622,16 +622,16 @@ public class ThreadPoolManager {
         return scheduledExecutor.awaitTermination(remaining, TimeUnit.NANOSECONDS);
     }
     
-    /**
-     * Check if shutdown
-     */
+    
+
+
     public boolean isShutdown() {
         return shutdown;
     }
     
-    /**
-     * Check if terminated
-     */
+    
+
+
     public boolean isTerminated() {
         for (ThreadPoolWrapper wrapper : threadPools.values()) {
             if (!wrapper.executor.isTerminated()) {

@@ -6,14 +6,14 @@ import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 import java.util.function.*;
 
-/**
- * Load balancer for AetherFlow.
- * Distributes load across multiple servers using various algorithms.
- * Supports health checking, session persistence, and dynamic scaling.
- */
+
+
+
+
+
 public class LoadBalancer {
     
-    // Load balancing algorithm
+    
     public enum LoadBalancingAlgorithm {
         ROUND_ROBIN,
         LEAST_CONNECTIONS,
@@ -25,7 +25,7 @@ public class LoadBalancer {
         CUSTOM
     }
     
-    // Server endpoint
+    
     public static class ServerEndpoint {
         public final String serverId;
         public final String host;
@@ -72,7 +72,7 @@ public class LoadBalancer {
         public void recordRequest(boolean success, long responseTime) {
             totalRequests++;
             if (success) {
-                // Update average response time
+                
                 double currentAvg = averageResponseTime;
                 long total = totalRequests;
                 double newAvg = (currentAvg * (total - 1) + responseTime) / total;
@@ -83,7 +83,7 @@ public class LoadBalancer {
         }
     }
     
-    // Load balancer configuration
+    
     public static class LoadBalancerConfig {
         public LoadBalancingAlgorithm algorithm;
         public int healthCheckInterval;
@@ -101,22 +101,22 @@ public class LoadBalancer {
         
         public LoadBalancerConfig() {
             this.algorithm = LoadBalancingAlgorithm.ROUND_ROBIN;
-            this.healthCheckInterval = 30000; // 30 seconds
-            this.healthCheckTimeout = 5000; // 5 seconds
+            this.healthCheckInterval = 30000; 
+            this.healthCheckTimeout = 5000; 
             this.maxRetries = 3;
-            this.retryDelay = 100; // 100ms
+            this.retryDelay = 100; 
             this.enableSessionPersistence = true;
             this.enableHealthChecks = true;
             this.unhealthyThreshold = 3;
             this.healthyThreshold = 2;
             this.enableCircuitBreaker = true;
             this.circuitBreakerThreshold = 5;
-            this.circuitBreakerTimeout = 60000; // 1 minute
+            this.circuitBreakerTimeout = 60000; 
             this.enableMetrics = true;
         }
     }
     
-    // Load balancer statistics
+    
     public static class LoadBalancerStats {
         public final AtomicLong totalRequests;
         public final AtomicLong successfulRequests;
@@ -151,7 +151,7 @@ public class LoadBalancer {
                 serverFailureCounts.computeIfAbsent(serverId, k -> new AtomicLong(0)).incrementAndGet();
             }
             
-            // Update response time
+            
             serverResponseTimes.compute(serverId, (k, v) -> {
                 if (v == null) {
                     return (double) responseTime;
@@ -169,7 +169,7 @@ public class LoadBalancer {
         }
     }
     
-    // Circuit breaker state
+    
     private static class CircuitBreakerState {
         public final String serverId;
         public volatile boolean tripped;
@@ -202,39 +202,39 @@ public class LoadBalancer {
         }
     }
     
-    // Load balancer configuration
+    
     private final LoadBalancerConfig config;
     
-    // Server endpoints
+    
     private final List<ServerEndpoint> servers;
     
-    // Round robin index
+    
     private final AtomicInteger roundRobinIndex;
     
-    // Session persistence mapping
+    
     private final Map<String, String> sessionToServerMap;
     
-    // Circuit breaker states
+    
     private final Map<String, CircuitBreakerState> circuitBreakers;
     
-    // Statistics
+    
     private final LoadBalancerStats stats;
     
-    // Lock for server management
+    
     private final ReentrantLock serverLock;
     
-    // Scheduled executor for health checks
+    
     private final ScheduledExecutorService healthCheckExecutor;
     
-    // Shutdown flag
+    
     private volatile boolean shutdown;
     
-    // Custom load balancing function
+    
     private volatile Function<String, ServerEndpoint> customLoadBalancer;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public LoadBalancer(LoadBalancerConfig config) {
         this.config = config;
         this.servers = new CopyOnWriteArrayList<>();
@@ -246,31 +246,31 @@ public class LoadBalancer {
         this.healthCheckExecutor = Executors.newSingleThreadScheduledExecutor();
         this.shutdown = false;
         
-        // Start health check thread
+        
         if (config.enableHealthChecks) {
             startHealthCheckThread();
         }
     }
     
-    /**
-     * Default constructor
-     */
+    
+
+
     public LoadBalancer() {
         this(new LoadBalancerConfig());
     }
     
-    /**
-     * Start health check thread
-     */
+    
+
+
     private void startHealthCheckThread() {
         healthCheckExecutor.scheduleAtFixedRate(() -> {
             performHealthChecks();
         }, config.healthCheckInterval, config.healthCheckInterval, TimeUnit.MILLISECONDS);
     }
     
-    /**
-     * Add server endpoint
-     */
+    
+
+
     public void addServer(ServerEndpoint server) {
         serverLock.lock();
         try {
@@ -281,25 +281,25 @@ public class LoadBalancer {
         }
     }
     
-    /**
-     * Remove server endpoint
-     */
+    
+
+
     public void removeServer(String serverId) {
         serverLock.lock();
         try {
             servers.removeIf(server -> server.serverId.equals(serverId));
             circuitBreakers.remove(serverId);
             
-            // Remove from session mapping
+            
             sessionToServerMap.entrySet().removeIf(entry -> entry.getValue().equals(serverId));
         } finally {
             serverLock.unlock();
         }
     }
     
-    /**
-     * Get server endpoint
-     */
+    
+
+
     public ServerEndpoint getServer(String serverId) {
         for (ServerEndpoint server : servers) {
             if (server.serverId.equals(serverId)) {
@@ -309,16 +309,16 @@ public class LoadBalancer {
         return null;
     }
     
-    /**
-     * Get all servers
-     */
+    
+
+
     public List<ServerEndpoint> getServers() {
         return new ArrayList<>(servers);
     }
     
-    /**
-     * Get healthy servers
-     */
+    
+
+
     public List<ServerEndpoint> getHealthyServers() {
         List<ServerEndpoint> healthyServers = new ArrayList<>();
         for (ServerEndpoint server : servers) {
@@ -329,18 +329,18 @@ public class LoadBalancer {
         return healthyServers;
     }
     
-    /**
-     * Select server for request
-     */
+    
+
+
     public ServerEndpoint selectServer() {
         return selectServer(null);
     }
     
-    /**
-     * Select server for request with session ID
-     */
+    
+
+
     public ServerEndpoint selectServer(String sessionId) {
-        // Check session persistence
+        
         if (config.enableSessionPersistence && sessionId != null) {
             String serverId = sessionToServerMap.get(sessionId);
             if (serverId != null) {
@@ -351,7 +351,7 @@ public class LoadBalancer {
             }
         }
         
-        // Select based on algorithm
+        
         ServerEndpoint selectedServer;
         switch (config.algorithm) {
             case ROUND_ROBIN:
@@ -383,7 +383,7 @@ public class LoadBalancer {
                 selectedServer = selectRoundRobin();
         }
         
-        // Update session mapping
+        
         if (config.enableSessionPersistence && sessionId != null && selectedServer != null) {
             sessionToServerMap.put(sessionId, selectedServer.serverId);
         }
@@ -391,9 +391,9 @@ public class LoadBalancer {
         return selectedServer;
     }
     
-    /**
-     * Select server using round robin
-     */
+    
+
+
     private ServerEndpoint selectRoundRobin() {
         List<ServerEndpoint> healthyServers = getHealthyServers();
         if (healthyServers.isEmpty()) {
@@ -404,9 +404,9 @@ public class LoadBalancer {
         return healthyServers.get(index);
     }
     
-    /**
-     * Select server using least connections
-     */
+    
+
+
     private ServerEndpoint selectLeastConnections() {
         List<ServerEndpoint> healthyServers = getHealthyServers();
         if (healthyServers.isEmpty()) {
@@ -426,9 +426,9 @@ public class LoadBalancer {
         return selected;
     }
     
-    /**
-     * Select server using weighted round robin
-     */
+    
+
+
     private ServerEndpoint selectWeightedRoundRobin() {
         List<ServerEndpoint> healthyServers = getHealthyServers();
         if (healthyServers.isEmpty()) {
@@ -449,9 +449,9 @@ public class LoadBalancer {
         return healthyServers.get(0);
     }
     
-    /**
-     * Select server using IP hash
-     */
+    
+
+
     private ServerEndpoint selectIpHash(String sessionId) {
         List<ServerEndpoint> healthyServers = getHealthyServers();
         if (healthyServers.isEmpty()) {
@@ -467,9 +467,9 @@ public class LoadBalancer {
         return healthyServers.get(index);
     }
     
-    /**
-     * Select server randomly
-     */
+    
+
+
     private ServerEndpoint selectRandom() {
         List<ServerEndpoint> healthyServers = getHealthyServers();
         if (healthyServers.isEmpty()) {
@@ -480,9 +480,9 @@ public class LoadBalancer {
         return healthyServers.get(index);
     }
     
-    /**
-     * Select server using least response time
-     */
+    
+
+
     private ServerEndpoint selectLeastResponseTime() {
         List<ServerEndpoint> healthyServers = getHealthyServers();
         if (healthyServers.isEmpty()) {
@@ -502,9 +502,9 @@ public class LoadBalancer {
         return selected;
     }
     
-    /**
-     * Select server using consistent hash
-     */
+    
+
+
     private ServerEndpoint selectConsistentHash(String sessionId) {
         List<ServerEndpoint> healthyServers = getHealthyServers();
         if (healthyServers.isEmpty()) {
@@ -515,15 +515,15 @@ public class LoadBalancer {
             return selectRandom();
         }
         
-        // Simple consistent hash implementation
+        
         int hash = sessionId.hashCode();
         int index = Math.abs(hash) % healthyServers.size();
         return healthyServers.get(index);
     }
     
-    /**
-     * Perform health checks
-     */
+    
+
+
     private void performHealthChecks() {
         for (ServerEndpoint server : servers) {
             boolean healthy = checkServerHealth(server);
@@ -533,7 +533,7 @@ public class LoadBalancer {
                 server.healthy = healthy;
                 server.lastHealthCheck = System.currentTimeMillis();
                 
-                // Update circuit breaker
+                
                 CircuitBreakerState cbState = circuitBreakers.get(server.serverId);
                 if (cbState != null) {
                     if (healthy) {
@@ -547,7 +547,7 @@ public class LoadBalancer {
                         }
                     }
                     
-                    // Check if circuit breaker should reset
+                    
                     if (cbState.shouldReset(config.circuitBreakerTimeout)) {
                         cbState.tripped = false;
                         cbState.consecutiveFailures = 0;
@@ -559,19 +559,19 @@ public class LoadBalancer {
         }
     }
     
-    /**
-     * Check server health
-     */
+    
+
+
     private boolean checkServerHealth(ServerEndpoint server) {
-        // Can lead to routing traffic to unhealthy servers
-        // In a real implementation, this would perform actual health checks
-        // For now, we just return true
+        
+        
+        
         return true;
     }
     
-    /**
-     * Record request
-     */
+    
+
+
     public void recordRequest(String serverId, boolean success, long responseTime) {
         ServerEndpoint server = getServer(serverId);
         if (server != null) {
@@ -586,58 +586,58 @@ public class LoadBalancer {
         stats.recordRequest(serverId, success, responseTime);
     }
     
-    /**
-     * Set custom load balancer
-     */
+    
+
+
     public void setCustomLoadBalancer(Function<String, ServerEndpoint> loadBalancer) {
         this.customLoadBalancer = loadBalancer;
     }
     
-    /**
-     * Get statistics
-     */
+    
+
+
     public LoadBalancerStats getStats() {
         return stats;
     }
     
-    /**
-     * Get configuration
-     */
+    
+
+
     public LoadBalancerConfig getConfig() {
         return config;
     }
     
-    /**
-     * Get session to server mapping
-     */
+    
+
+
     public Map<String, String> getSessionToServerMap() {
         return new HashMap<>(sessionToServerMap);
     }
     
-    /**
-     * Clear session mapping
-     */
+    
+
+
     public void clearSessionMapping() {
         sessionToServerMap.clear();
     }
     
-    /**
-     * Remove session from mapping
-     */
+    
+
+
     public void removeSession(String sessionId) {
         sessionToServerMap.remove(sessionId);
     }
     
-    /**
-     * Get circuit breaker state
-     */
+    
+
+
     public CircuitBreakerState getCircuitBreakerState(String serverId) {
         return circuitBreakers.get(serverId);
     }
     
-    /**
-     * Reset circuit breaker
-     */
+    
+
+
     public void resetCircuitBreaker(String serverId) {
         CircuitBreakerState state = circuitBreakers.get(serverId);
         if (state != null) {
@@ -646,9 +646,9 @@ public class LoadBalancer {
         }
     }
     
-    /**
-     * Shutdown load balancer
-     */
+    
+
+
     public void shutdown() {
         shutdown = true;
         

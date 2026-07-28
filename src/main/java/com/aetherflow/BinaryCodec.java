@@ -13,13 +13,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Binary codec for encoding and decoding complex data types in AetherFlow.
- * Supports variant types, nested structures, and custom serialization formats.
- */
+
+
+
+
 public class BinaryCodec {
     
-    // Type identifiers for variant types
+    
     public static final byte TYPE_NULL = 0x00;
     public static final byte TYPE_BOOL = 0x01;
     public static final byte TYPE_INT8 = 0x02;
@@ -42,18 +42,18 @@ public class BinaryCodec {
     public static final byte TYPE_UUID = 0x13;
     public static final byte TYPE_VARIANT = 0x14;
     
-    // Codec version for compatibility
+    
     private static final int CODEC_VERSION = 1;
     
-    // Maximum nesting depth to prevent stack overflow
+    
     private static final int MAX_NESTING_DEPTH = 100;
     
-    // Maximum array/map size to prevent memory exhaustion
+    
     private static final int MAX_COLLECTION_SIZE = 1000000;
     
-    /**
-     * Encode a value to binary format
-     */
+    
+
+
     public static byte[] encode(Object value) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
@@ -62,9 +62,9 @@ public class BinaryCodec {
         return baos.toByteArray();
     }
     
-    /**
-     * Encode a value with type prefix
-     */
+    
+
+
     private static void encodeValue(DataOutputStream dos, Object value, int depth) throws IOException {
         if (depth > MAX_NESTING_DEPTH) {
             throw new IOException("Maximum nesting depth exceeded");
@@ -147,9 +147,9 @@ public class BinaryCodec {
         }
     }
     
-    /**
-     * Decode a value from binary format
-     */
+    
+
+
     public static Object decode(byte[] data) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(data);
         DataInputStream dis = new DataInputStream(bais);
@@ -158,9 +158,9 @@ public class BinaryCodec {
         return value;
     }
     
-    /**
-     * Decode a value with type prefix
-     */
+    
+
+
     private static Object decodeValue(DataInputStream dis, int depth) throws IOException {
         if (depth > MAX_NESTING_DEPTH) {
             throw new IOException("Maximum nesting depth exceeded");
@@ -276,13 +276,13 @@ public class BinaryCodec {
                 return struct;
                 
             case TYPE_VARIANT:
-                // The actual type is read but not properly validated before decoding
+                
                 byte actualType = dis.readByte();
-                // This allows type confusion by crafting invalid type tags
-                // Push back the type byte to reuse decode logic
-                // This is a simplified implementation
+                
+                
+                
                 Object variantValue = decodeValue(dis, depth + 1);
-                // The caller assumes the type matches actualType, but we don't validate
+                
                 return variantValue;
                 
             default:
@@ -290,23 +290,23 @@ public class BinaryCodec {
         }
     }
     
-    /**
-     * Encode a protocol message to binary format
-     */
+    
+
+
     public static byte[] encodeMessage(ProtocolMessage message) throws IOException {
         return message.serialize();
     }
     
-    /**
-     * Decode a protocol message from binary format
-     */
+    
+
+
     public static ProtocolMessage decodeMessage(byte[] data) {
         return ProtocolMessage.deserialize(data);
     }
     
-    /**
-     * Encode a variable-length integer (varint)
-     */
+    
+
+
     public static byte[] encodeVarint(long value) {
         List<Byte> bytes = new ArrayList<>();
         while ((value & ~0x7FL) != 0) {
@@ -322,9 +322,9 @@ public class BinaryCodec {
         return result;
     }
     
-    /**
-     * Decode a variable-length integer (varint)
-     */
+    
+
+
     public static VarintResult decodeVarint(byte[] data, int offset) {
         long value = 0;
         int shift = 0;
@@ -345,9 +345,9 @@ public class BinaryCodec {
         throw new IllegalArgumentException("Invalid varint");
     }
     
-    /**
-     * Result of varint decoding
-     */
+    
+
+
     public static class VarintResult {
         public final long value;
         public final int bytesConsumed;
@@ -358,9 +358,9 @@ public class BinaryCodec {
         }
     }
     
-    /**
-     * Struct data type for named fields
-     */
+    
+
+
     public static class Struct {
         private final List<Field> fields;
         
@@ -404,9 +404,9 @@ public class BinaryCodec {
         }
     }
     
-    /**
-     * Validate type consistency for variant types
-     */
+    
+
+
     public static boolean validateTypeConsistency(byte declaredType, Object value) {
         if (value == null) {
             return declaredType == TYPE_NULL;
@@ -462,7 +462,7 @@ public class BinaryCodec {
             return true;
         }
         
-        // This allows type confusion attacks
+        
         return false;
     }
 }

@@ -8,14 +8,14 @@ import java.sql.*;
 import javax.sql.DataSource;
 import java.io.*;
 
-/**
- * Database manager for AetherFlow.
- * Handles database connections, query execution, transaction management, and connection pooling.
- * Supports multiple database types and provides comprehensive query capabilities.
- */
+
+
+
+
+
 public class DatabaseManager {
     
-    // Database type
+    
     public enum DatabaseType {
         MYSQL,
         POSTGRESQL,
@@ -26,7 +26,7 @@ public class DatabaseManager {
         CUSTOM
     }
     
-    // Query result
+    
     public static class QueryResult {
         public final List<Map<String, Object>> rows;
         public final int affectedRows;
@@ -60,7 +60,7 @@ public class DatabaseManager {
         }
     }
     
-    // Database configuration
+    
     public static class DatabaseConfig {
         public DatabaseType databaseType;
         public String host;
@@ -101,7 +101,7 @@ public class DatabaseManager {
         }
     }
     
-    // Database statistics
+    
     public static class DatabaseStats {
         public final AtomicLong totalQueries;
         public final AtomicLong successfulQueries;
@@ -173,7 +173,7 @@ public class DatabaseManager {
         }
     }
     
-    // Connection wrapper
+    
     private static class ConnectionWrapper {
         public final Connection connection;
         public final long creationTime;
@@ -202,7 +202,7 @@ public class DatabaseManager {
         }
     }
     
-    // Transaction context
+    
     private static class TransactionContext {
         public final String transactionId;
         public final Connection connection;
@@ -223,45 +223,45 @@ public class DatabaseManager {
         }
     }
     
-    // Database configuration
+    
     private final DatabaseConfig config;
     
-    // Connection pool
+    
     private final BlockingQueue<ConnectionWrapper> connectionPool;
     
-    // Active connections
+    
     private final Set<ConnectionWrapper> activeConnections;
     
-    // Transaction contexts
+    
     private final Map<String, TransactionContext> transactions;
     
-    // Statement cache
+    
     private final Map<String, PreparedStatement> statementCache;
     
-    // Statistics
+    
     private final DatabaseStats stats;
     
-    // Lock for connection management
+    
     private final ReentrantLock connectionLock;
     
-    // Lock for transaction management
+    
     private final ReentrantLock transactionLock;
     
-    // Lock for statement cache
+    
     private final ReentrantLock statementLock;
     
-    // Transaction ID generator
+    
     private final AtomicLong transactionIdGenerator;
     
-    // Scheduled executor for cleanup
+    
     private final ScheduledExecutorService cleanupExecutor;
     
-    // Shutdown flag
+    
     private volatile boolean shutdown;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public DatabaseManager(DatabaseConfig config) throws SQLException {
         this.config = config;
         this.connectionPool = new LinkedBlockingQueue<>(config.maxConnections);
@@ -276,23 +276,23 @@ public class DatabaseManager {
         this.cleanupExecutor = Executors.newSingleThreadScheduledExecutor();
         this.shutdown = false;
         
-        // Initialize connection pool
+        
         initializeConnectionPool();
         
-        // Start cleanup thread
+        
         startCleanupThread();
     }
     
-    /**
-     * Default constructor
-     */
+    
+
+
     public DatabaseManager() throws SQLException {
         this(new DatabaseConfig());
     }
     
-    /**
-     * Initialize connection pool
-     */
+    
+
+
     private void initializeConnectionPool() throws SQLException {
         for (int i = 0; i < config.minConnections; i++) {
             ConnectionWrapper wrapper = createConnection();
@@ -302,9 +302,9 @@ public class DatabaseManager {
         }
     }
     
-    /**
-     * Create database connection
-     */
+    
+
+
     private ConnectionWrapper createConnection() throws SQLException {
         try {
             Connection connection;
@@ -331,9 +331,9 @@ public class DatabaseManager {
         }
     }
     
-    /**
-     * Build connection string
-     */
+    
+
+
     private String buildConnectionString() {
         switch (config.databaseType) {
             case MYSQL:
@@ -357,9 +357,9 @@ public class DatabaseManager {
         }
     }
     
-    /**
-     * Start cleanup thread
-     */
+    
+
+
     private void startCleanupThread() {
         cleanupExecutor.scheduleAtFixedRate(() -> {
             cleanupIdleConnections();
@@ -367,9 +367,9 @@ public class DatabaseManager {
         }, 60000, 60000, TimeUnit.MILLISECONDS);
     }
     
-    /**
-     * Get connection from pool
-     */
+    
+
+
     private ConnectionWrapper getConnection() throws SQLException {
         if (shutdown) {
             throw new SQLException("Database manager is shutdown");
@@ -383,7 +383,7 @@ public class DatabaseManager {
                 if (activeConnections.size() < config.maxConnections) {
                     wrapper = createConnection();
                 } else {
-                    // Wait for available connection
+                    
                     wrapper = connectionPool.poll(config.connectionTimeout, TimeUnit.MILLISECONDS);
                     if (wrapper == null) {
                         throw new SQLException("Connection timeout");
@@ -405,9 +405,9 @@ public class DatabaseManager {
         }
     }
     
-    /**
-     * Return connection to pool
-     */
+    
+
+
     private void returnConnection(ConnectionWrapper wrapper) {
         connectionLock.lock();
         try {
@@ -421,32 +421,32 @@ public class DatabaseManager {
                     wrapper.connection.close();
                     stats.recordConnectionClosed();
                 } catch (SQLException e) {
-                    // Ignore close errors
+                    
                 }
             }
         } catch (SQLException e) {
-            // Connection is invalid, close it
+            
             try {
                 wrapper.connection.close();
                 stats.recordConnectionClosed();
             } catch (SQLException ex) {
-                // Ignore close errors
+                
             }
         } finally {
             connectionLock.unlock();
         }
     }
     
-    /**
-     * Execute query
-     */
+    
+
+
     public QueryResult executeQuery(String query) throws SQLException {
         return executeQuery(query, null);
     }
     
-    /**
-     * Execute query with parameters
-     */
+    
+
+
     public QueryResult executeQuery(String query, Map<String, Object> parameters) throws SQLException {
         ConnectionWrapper wrapper = null;
         long startTime = System.currentTimeMillis();
@@ -494,16 +494,16 @@ public class DatabaseManager {
         }
     }
     
-    /**
-     * Execute update
-     */
+    
+
+
     public QueryResult executeUpdate(String query) throws SQLException {
         return executeUpdate(query, null);
     }
     
-    /**
-     * Execute update with parameters
-     */
+    
+
+
     public QueryResult executeUpdate(String query, Map<String, Object> parameters) throws SQLException {
         ConnectionWrapper wrapper = null;
         long startTime = System.currentTimeMillis();
@@ -536,9 +536,9 @@ public class DatabaseManager {
         }
     }
     
-    /**
-     * Prepare statement
-     */
+    
+
+
     private PreparedStatement prepareStatement(Connection connection, String query, 
                                              Map<String, Object> parameters) throws SQLException {
         PreparedStatement statement;
@@ -560,7 +560,7 @@ public class DatabaseManager {
             statement = connection.prepareStatement(query);
         }
         
-        // Set parameters
+        
         if (parameters != null) {
             int index = 1;
             for (Object value : parameters.values()) {
@@ -571,9 +571,9 @@ public class DatabaseManager {
         return statement;
     }
     
-    /**
-     * Begin transaction
-     */
+    
+
+
     public String beginTransaction() throws SQLException {
         ConnectionWrapper wrapper = null;
         
@@ -604,9 +604,9 @@ public class DatabaseManager {
         }
     }
     
-    /**
-     * Commit transaction
-     */
+    
+
+
     public void commitTransaction(String transactionId) throws SQLException {
         transactionLock.lock();
         try {
@@ -620,7 +620,7 @@ public class DatabaseManager {
             
             stats.recordTransaction(true);
             
-            // Return connection to pool
+            
             ConnectionWrapper wrapper = findWrapperForConnection(context.connection);
             if (wrapper != null) {
                 returnConnection(wrapper);
@@ -634,9 +634,9 @@ public class DatabaseManager {
         }
     }
     
-    /**
-     * Rollback transaction
-     */
+    
+
+
     public void rollbackTransaction(String transactionId) throws SQLException {
         transactionLock.lock();
         try {
@@ -650,7 +650,7 @@ public class DatabaseManager {
             
             stats.recordTransaction(false);
             
-            // Return connection to pool
+            
             ConnectionWrapper wrapper = findWrapperForConnection(context.connection);
             if (wrapper != null) {
                 returnConnection(wrapper);
@@ -664,9 +664,9 @@ public class DatabaseManager {
         }
     }
     
-    /**
-     * Find wrapper for connection
-     */
+    
+
+
     private ConnectionWrapper findWrapperForConnection(Connection connection) {
         for (ConnectionWrapper wrapper : activeConnections) {
             if (wrapper.connection == connection) {
@@ -676,9 +676,9 @@ public class DatabaseManager {
         return null;
     }
     
-    /**
-     * Execute query in transaction
-     */
+    
+
+
     public QueryResult executeInTransaction(String transactionId, String query, 
                                            Map<String, Object> parameters) throws SQLException {
         transactionLock.lock();
@@ -748,9 +748,9 @@ public class DatabaseManager {
         }
     }
     
-    /**
-     * Cleanup idle connections
-     */
+    
+
+
     private void cleanupIdleConnections() {
         connectionLock.lock();
         try {
@@ -763,7 +763,7 @@ public class DatabaseManager {
                         wrapper.connection.close();
                         stats.recordConnectionClosed();
                     } catch (SQLException e) {
-                        // Ignore close errors
+                        
                     }
                 }
             }
@@ -772,9 +772,9 @@ public class DatabaseManager {
         }
     }
     
-    /**
-     * Cleanup expired transactions
-     */
+    
+
+
     private void cleanupExpiredTransactions() {
         long now = System.currentTimeMillis();
         
@@ -789,7 +789,7 @@ public class DatabaseManager {
                     try {
                         context.connection.rollback();
                     } catch (SQLException e) {
-                        // Ignore rollback errors
+                        
                     }
                     context.active = false;
                     it.remove();
@@ -801,44 +801,44 @@ public class DatabaseManager {
         }
     }
     
-    /**
-     * Get statistics
-     */
+    
+
+
     public DatabaseStats getStats() {
         return stats;
     }
     
-    /**
-     * Get configuration
-     */
+    
+
+
     public DatabaseConfig getConfig() {
         return config;
     }
     
-    /**
-     * Get active connection count
-     */
+    
+
+
     public int getActiveConnectionCount() {
         return activeConnections.size();
     }
     
-    /**
-     * Get available connection count
-     */
+    
+
+
     public int getAvailableConnectionCount() {
         return connectionPool.size();
     }
     
-    /**
-     * Get transaction count
-     */
+    
+
+
     public int getTransactionCount() {
         return transactions.size();
     }
     
-    /**
-     * Clear statement cache
-     */
+    
+
+
     public void clearStatementCache() {
         statementLock.lock();
         try {
@@ -846,7 +846,7 @@ public class DatabaseManager {
                 try {
                     statement.close();
                 } catch (SQLException e) {
-                    // Ignore close errors
+                    
                 }
             }
             statementCache.clear();
@@ -855,20 +855,20 @@ public class DatabaseManager {
         }
     }
     
-    /**
-     * Shutdown database manager
-     */
+    
+
+
     public void shutdown() {
         shutdown = true;
         
-        // Rollback all active transactions
+        
         transactionLock.lock();
         try {
             for (TransactionContext context : transactions.values()) {
                 try {
                     context.connection.rollback();
                 } catch (SQLException e) {
-                    // Ignore rollback errors
+                    
                 }
             }
             transactions.clear();
@@ -876,7 +876,7 @@ public class DatabaseManager {
             transactionLock.unlock();
         }
         
-        // Close all connections
+        
         connectionLock.lock();
         try {
             for (ConnectionWrapper wrapper : connectionPool) {
@@ -884,7 +884,7 @@ public class DatabaseManager {
                     wrapper.connection.close();
                     stats.recordConnectionClosed();
                 } catch (SQLException e) {
-                    // Ignore close errors
+                    
                 }
             }
             connectionPool.clear();
@@ -894,7 +894,7 @@ public class DatabaseManager {
                     wrapper.connection.close();
                     stats.recordConnectionClosed();
                 } catch (SQLException e) {
-                    // Ignore close errors
+                    
                 }
             }
             activeConnections.clear();
@@ -902,10 +902,10 @@ public class DatabaseManager {
             connectionLock.unlock();
         }
         
-        // Clear statement cache
+        
         clearStatementCache();
         
-        // Shutdown cleanup executor
+        
         cleanupExecutor.shutdown();
         try {
             cleanupExecutor.awaitTermination(5, TimeUnit.SECONDS);
@@ -914,9 +914,9 @@ public class DatabaseManager {
         }
     }
     
-    /**
-     * Database exception
-     */
+    
+
+
     public static class DatabaseException extends RuntimeException {
         public DatabaseException(String message) {
             super(message);

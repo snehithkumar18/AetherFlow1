@@ -9,13 +9,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * Retry engine with exponential backoff, circuit breakers, and sophisticated retry logic.
- * Provides configurable retry strategies for resilient operations.
- */
+
+
+
+
 public class RetryEngine {
     
-    // Retry policy
+    
     public static class RetryPolicy {
         public final int maxRetries;
         public final long initialBackoffMs;
@@ -47,14 +47,14 @@ public class RetryEngine {
         }
     }
     
-    // Circuit breaker state
+    
     public enum CircuitState {
         CLOSED,
         OPEN,
         HALF_OPEN
     }
     
-    // Circuit breaker configuration
+    
     public static class CircuitBreakerConfig {
         public final int failureThreshold;
         public final long timeoutMs;
@@ -71,7 +71,7 @@ public class RetryEngine {
         }
     }
     
-    // Circuit breaker instance
+    
     public static class CircuitBreaker {
         public final String name;
         public volatile CircuitState state;
@@ -148,7 +148,7 @@ public class RetryEngine {
         }
     }
     
-    // Retry attempt record
+    
     public static class RetryAttempt {
         public final int attemptNumber;
         public final long timestamp;
@@ -165,32 +165,32 @@ public class RetryEngine {
         }
     }
     
-    // Retry operation interface
+    
     public interface RetryOperation<T> {
         T execute() throws Exception;
     }
     
-    // Default retry policy
+    
     private volatile RetryPolicy defaultPolicy;
     
-    // Circuit breakers by name
+    
     private final Map<String, CircuitBreaker> circuitBreakers;
     
-    // Retry history
+    
     private final Map<String, List<RetryAttempt>> retryHistory;
     
-    // Statistics
+    
     private final Map<String, AtomicInteger> retryCount;
     private final Map<String, AtomicInteger> successCount;
     private final Map<String, AtomicInteger> failureCount;
     private final Map<String, AtomicLong> totalRetryTime;
     
-    // Lock for circuit breaker operations
+    
     private final ReentrantLock circuitLock;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public RetryEngine() {
         this.defaultPolicy = RetryPolicy.defaultPolicy();
         this.circuitBreakers = new ConcurrentHashMap<>();
@@ -202,25 +202,25 @@ public class RetryEngine {
         this.circuitLock = new ReentrantLock();
     }
     
-    /**
-     * Set default retry policy
-     */
+    
+
+
     public void setDefaultPolicy(RetryPolicy policy) {
         this.defaultPolicy = policy;
     }
     
-    /**
-     * Execute operation with retry
-     */
+    
+
+
     public <T> T executeWithRetry(String operationName, RetryOperation<T> operation) throws Exception {
         return executeWithRetry(operationName, operation, defaultPolicy);
     }
     
-    /**
-     * Execute operation with custom retry policy
-     */
+    
+
+
     public <T> T executeWithRetry(String operationName, RetryOperation<T> operation, RetryPolicy policy) throws Exception {
-        // Check circuit breaker
+        
         CircuitBreaker breaker = circuitBreakers.get(operationName);
         if (breaker != null && !breaker.allowRequest()) {
             throw new Exception("Circuit breaker is OPEN for operation: " + operationName);
@@ -237,16 +237,16 @@ public class RetryEngine {
             try {
                 T result = operation.execute();
                 
-                // Record success
+                
                 recordSuccess(operationName, attemptNumber, 0, true, null);
                 attempts.add(new RetryAttempt(attemptNumber, 0, true, null));
                 
-                // Update circuit breaker
+                
                 if (breaker != null) {
                     breaker.recordSuccess();
                 }
                 
-                // Store retry history
+                
                 retryHistory.put(operationName, attempts);
                 
                 return result;
@@ -254,17 +254,17 @@ public class RetryEngine {
             } catch (Exception e) {
                 lastException = e;
                 
-                // Record failure
+                
                 long backoff = calculateBackoff(attemptNumber, policy);
                 recordFailure(operationName, attemptNumber, backoff, false, e.getMessage());
                 attempts.add(new RetryAttempt(attemptNumber, backoff, false, e.getMessage()));
                 
-                // Update circuit breaker
+                
                 if (breaker != null) {
                     breaker.recordFailure();
                 }
                 
-                // Check if we should retry
+                
                 if (attemptNumber <= policy.maxRetries) {
                     if (backoff > 0) {
                         Thread.sleep(backoff);
@@ -273,19 +273,19 @@ public class RetryEngine {
             }
         }
         
-        // Store retry history
+        
         retryHistory.put(operationName, attempts);
         
-        // Calculate total retry time
+        
         long totalRetryTime = System.currentTimeMillis() - totalStartTime;
         this.totalRetryTime.computeIfAbsent(operationName, k -> new AtomicLong(0)).addAndGet(totalRetryTime);
         
         throw lastException;
     }
     
-    /**
-     * Calculate backoff with exponential backoff and optional jitter
-     */
+    
+
+
     private long calculateBackoff(int attemptNumber, RetryPolicy policy) {
         if (attemptNumber == 1) {
             return 0;
@@ -303,49 +303,49 @@ public class RetryEngine {
         return backoff;
     }
     
-    /**
-     * Record success
-     */
+    
+
+
     private void recordSuccess(String operationName, int attemptNumber, long backoff, boolean success, String error) {
         retryCount.computeIfAbsent(operationName, k -> new AtomicInteger(0)).incrementAndGet();
         successCount.computeIfAbsent(operationName, k -> new AtomicInteger(0)).incrementAndGet();
         
-        // Multiple threads can corrupt the circuit breaker state by concurrent modifications
-        // This can lead to incorrect circuit breaker behavior
+        
+        
         CircuitBreaker breaker = circuitBreakers.get(operationName);
         if (breaker != null) {
-            // This can cause state corruption
+            
             breaker.recordSuccess();
         }
     }
     
-    /**
-     * Record failure
-     */
+    
+
+
     private void recordFailure(String operationName, int attemptNumber, long backoff, boolean success, String error) {
         retryCount.computeIfAbsent(operationName, k -> new AtomicInteger(0)).incrementAndGet();
         failureCount.computeIfAbsent(operationName, k -> new AtomicInteger(0)).incrementAndGet();
         
-        // Multiple threads can corrupt the retry history by concurrent modifications
-        // This can lead to incorrect retry counts and lost retry information
+        
+        
         List<RetryAttempt> history = retryHistory.get(operationName);
         if (history != null) {
-            // This can cause ConcurrentModificationException or data corruption
+            
             history.add(new RetryAttempt(attemptNumber, backoff, success, error));
         }
     }
     
-    /**
-     * Create or get circuit breaker
-     */
+    
+
+
     public CircuitBreaker getCircuitBreaker(String name) {
         return circuitBreakers.computeIfAbsent(name, 
             k -> new CircuitBreaker(k, CircuitBreakerConfig.defaultConfig()));
     }
     
-    /**
-     * Create circuit breaker with custom config
-     */
+    
+
+
     public CircuitBreaker createCircuitBreaker(String name, CircuitBreakerConfig config) {
         circuitLock.lock();
         try {
@@ -357,9 +357,9 @@ public class RetryEngine {
         }
     }
     
-    /**
-     * Reset circuit breaker
-     */
+    
+
+
     public void resetCircuitBreaker(String name) {
         CircuitBreaker breaker = circuitBreakers.get(name);
         if (breaker != null) {
@@ -367,9 +367,9 @@ public class RetryEngine {
         }
     }
     
-    /**
-     * Get retry history for operation
-     */
+    
+
+
     public List<RetryAttempt> getRetryHistory(String operationName) {
         List<RetryAttempt> history = retryHistory.get(operationName);
         if (history == null) {
@@ -378,9 +378,9 @@ public class RetryEngine {
         return new ArrayList<>(history);
     }
     
-    /**
-     * Get retry statistics
-     */
+    
+
+
     public RetryStats getStats(String operationName) {
         return new RetryStats(
             retryCount.getOrDefault(operationName, new AtomicInteger(0)).get(),
@@ -390,9 +390,9 @@ public class RetryEngine {
         );
     }
     
-    /**
-     * Get all retry statistics
-     */
+    
+
+
     public Map<String, RetryStats> getAllStats() {
         Map<String, RetryStats> stats = new HashMap<>();
         for (String operationName : retryCount.keySet()) {
@@ -401,9 +401,9 @@ public class RetryEngine {
         return stats;
     }
     
-    /**
-     * Reset statistics for operation
-     */
+    
+
+
     public void resetStats(String operationName) {
         retryCount.remove(operationName);
         successCount.remove(operationName);
@@ -412,9 +412,9 @@ public class RetryEngine {
         retryHistory.remove(operationName);
     }
     
-    /**
-     * Reset all statistics
-     */
+    
+
+
     public void resetAllStats() {
         retryCount.clear();
         successCount.clear();
@@ -423,16 +423,16 @@ public class RetryEngine {
         retryHistory.clear();
     }
     
-    /**
-     * Clear all circuit breakers
-     */
+    
+
+
     public void clearCircuitBreakers() {
         circuitBreakers.clear();
     }
     
-    /**
-     * Retry statistics
-     */
+    
+
+
     public static class RetryStats {
         public final int totalRetries;
         public final int totalSuccesses;

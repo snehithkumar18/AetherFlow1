@@ -10,21 +10,21 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * Network transport layer for AetherFlow.
- * Handles low-level network I/O, connection management, and data transmission.
- * Supports TCP, UDP, and Unix domain sockets with multiplexing.
- */
+
+
+
+
+
 public class NetworkTransport {
     
-    // Transport types
+    
     public enum TransportType {
         TCP,
         UDP,
         UNIX_DOMAIN
     }
     
-    // Connection states
+    
     public enum ConnectionState {
         DISCONNECTED,
         CONNECTING,
@@ -34,7 +34,7 @@ public class NetworkTransport {
         ERROR
     }
     
-    // Transport configuration
+    
     public static class TransportConfig {
         public TransportType transportType;
         public int bufferSize;
@@ -63,7 +63,7 @@ public class NetworkTransport {
         }
     }
     
-    // Network connection
+    
     public static class NetworkConnection {
         public final long connectionId;
         public final SocketAddress remoteAddress;
@@ -129,7 +129,7 @@ public class NetworkTransport {
         }
     }
     
-    // Transport statistics
+    
     public static class TransportStats {
         public final AtomicLong totalConnections;
         public final AtomicLong activeConnections;
@@ -156,7 +156,7 @@ public class NetworkTransport {
         }
     }
     
-    // Message callback interface
+    
     public interface MessageCallback {
         void onMessageReceived(NetworkConnection connection, byte[] message);
         void onConnectionEstablished(NetworkConnection connection);
@@ -164,36 +164,36 @@ public class NetworkTransport {
         void onError(NetworkConnection connection, Throwable error);
     }
     
-    // Transport configuration
+    
     private final TransportConfig config;
     
-    // Selector for I/O multiplexing
+    
     private Selector selector;
     
-    // Connection management
+    
     private final Map<Long, NetworkConnection> connections;
     private final Map<SocketAddress, NetworkConnection> addressToConnection;
     private final AtomicLong connectionIdGenerator;
     
-    // Statistics
+    
     private final TransportStats stats;
     
-    // Thread pool for I/O operations
+    
     private final ExecutorService ioExecutor;
     private final ScheduledExecutorService scheduledExecutor;
     
-    // Message callback
+    
     private volatile MessageCallback messageCallback;
     
-    // Shutdown flag
+    
     private volatile boolean shutdown;
     
-    // Lock for connection management
+    
     private final ReentrantLock connectionLock;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public NetworkTransport(TransportConfig config) throws IOException {
         this.config = config;
         this.selector = Selector.open();
@@ -206,30 +206,30 @@ public class NetworkTransport {
         this.shutdown = false;
         this.connectionLock = new ReentrantLock();
         
-        // Start I/O thread
+        
         startIOThread();
         
-        // Start cleanup thread
+        
         startCleanupThread();
     }
     
-    /**
-     * Default constructor
-     */
+    
+
+
     public NetworkTransport() throws IOException {
         this(new TransportConfig());
     }
     
-    /**
-     * Set message callback
-     */
+    
+
+
     public void setMessageCallback(MessageCallback callback) {
         this.messageCallback = callback;
     }
     
-    /**
-     * Start I/O thread
-     */
+    
+
+
     private void startIOThread() {
         Thread ioThread = new Thread(() -> {
             while (!shutdown) {
@@ -267,9 +267,9 @@ public class NetworkTransport {
         ioThread.start();
     }
     
-    /**
-     * Start cleanup thread
-     */
+    
+
+
     private void startCleanupThread() {
         scheduledExecutor.scheduleAtFixedRate(() -> {
             cleanupIdleConnections();
@@ -277,26 +277,26 @@ public class NetworkTransport {
         }, 30000, 30000, TimeUnit.MILLISECONDS);
     }
     
-    /**
-     * Connect to remote address
-     */
+    
+
+
     public NetworkConnection connect(String host, int port) throws IOException {
         return connect(new InetSocketAddress(host, port));
     }
     
-    /**
-     * Connect to remote address
-     */
+    
+
+
     public NetworkConnection connect(SocketAddress address) throws IOException {
         connectionLock.lock();
         try {
-            // Check if connection already exists
+            
             NetworkConnection existing = addressToConnection.get(address);
             if (existing != null && existing.state == ConnectionState.CONNECTED) {
                 return existing;
             }
             
-            // Create new connection
+            
             long connectionId = connectionIdGenerator.incrementAndGet();
             SocketChannel channel = SocketChannel.open();
             channel.configureBlocking(false);
@@ -305,10 +305,10 @@ public class NetworkTransport {
                 connectionId, address, channel.getLocalAddress(), config.transportType
             );
             
-            // Configure socket options
+            
             configureSocket(channel);
             
-            // Initiate connection
+            
             channel.connect(address);
             channel.register(selector, SelectionKey.OP_CONNECT, connection);
             
@@ -322,9 +322,9 @@ public class NetworkTransport {
         }
     }
     
-    /**
-     * Configure socket options
-     */
+    
+
+
     private void configureSocket(SocketChannel channel) throws IOException {
         if (config.transportType == TransportType.TCP) {
             if (config.enableKeepAlive) {
@@ -342,9 +342,9 @@ public class NetworkTransport {
         }
     }
     
-    /**
-     * Handle accept operation (for server sockets)
-     */
+    
+
+
     private void handleAccept(SelectionKey key) throws IOException {
         ServerSocketChannel serverChannel = (ServerSocketChannel) key.channel();
         SocketChannel clientChannel = serverChannel.accept();
@@ -352,10 +352,10 @@ public class NetworkTransport {
         if (clientChannel != null) {
             clientChannel.configureBlocking(false);
             
-            // Configure socket options
+            
             configureSocket(clientChannel);
             
-            // Create connection
+            
             long connectionId = connectionIdGenerator.incrementAndGet();
             NetworkConnection connection = new NetworkConnection(
                 connectionId, 
@@ -367,7 +367,7 @@ public class NetworkTransport {
             connection.state = ConnectionState.CONNECTED;
             connection.recordActivity();
             
-            // Register for read operations
+            
             clientChannel.register(selector, SelectionKey.OP_READ, connection);
             
             connections.put(connectionId, connection);
@@ -375,16 +375,16 @@ public class NetworkTransport {
             stats.totalConnections.incrementAndGet();
             stats.activeConnections.incrementAndGet();
             
-            // Notify callback
+            
             if (messageCallback != null) {
                 messageCallback.onConnectionEstablished(connection);
             }
         }
     }
     
-    /**
-     * Handle connection completion
-     */
+    
+
+
     private void handleConnect(SelectionKey key) throws IOException {
         SocketChannel channel = (SocketChannel) key.channel();
         NetworkConnection connection = (NetworkConnection) key.attachment();
@@ -395,10 +395,10 @@ public class NetworkTransport {
                 connection.recordActivity();
                 stats.activeConnections.incrementAndGet();
                 
-                // Register for read operations
+                
                 channel.register(selector, SelectionKey.OP_READ, connection);
                 
-                // Notify callback
+                
                 if (messageCallback != null) {
                     messageCallback.onConnectionEstablished(connection);
                 }
@@ -414,9 +414,9 @@ public class NetworkTransport {
         }
     }
     
-    /**
-     * Handle read operation
-     */
+    
+
+
     private void handleRead(SelectionKey key) throws IOException {
         SocketChannel channel = (SocketChannel) key.channel();
         NetworkConnection connection = (NetworkConnection) key.attachment();
@@ -437,12 +437,12 @@ public class NetworkTransport {
                 stats.totalBytesReceived.addAndGet(bytesRead);
                 stats.totalMessagesReceived.incrementAndGet();
                 
-                // Notify callback
+                
                 if (messageCallback != null) {
                     messageCallback.onMessageReceived(connection, data);
                 }
             } else if (bytesRead < 0) {
-                // Connection closed by remote
+                
                 closeConnection(connection);
             }
         } catch (IOException e) {
@@ -456,14 +456,14 @@ public class NetworkTransport {
         }
     }
     
-    /**
-     * Handle write operation
-     */
+    
+
+
     private void handleWrite(SelectionKey key) throws IOException {
         SocketChannel channel = (SocketChannel) key.channel();
         NetworkConnection connection = (NetworkConnection) key.attachment();
         
-        // Get pending data from connection metadata
+        
         ByteBuffer pendingData = (ByteBuffer) connection.metadata.get("pendingWrite");
         
         if (pendingData != null) {
@@ -473,9 +473,9 @@ public class NetworkTransport {
                 stats.totalBytesSent.addAndGet(bytesWritten);
                 
                 if (!pendingData.hasRemaining()) {
-                    // All data written, remove from metadata
+                    
                     connection.metadata.remove("pendingWrite");
-                    // Switch back to read mode
+                    
                     channel.register(selector, SelectionKey.OP_READ, connection);
                 }
             } catch (IOException e) {
@@ -490,9 +490,9 @@ public class NetworkTransport {
         }
     }
     
-    /**
-     * Send data to connection
-     */
+    
+
+
     public void send(NetworkConnection connection, byte[] data) throws IOException {
         if (connection.state != ConnectionState.CONNECTED) {
             throw new IOException("Connection not connected: " + connection.state);
@@ -509,7 +509,7 @@ public class NetworkTransport {
             int bytesWritten = channel.write(buffer);
             
             if (buffer.hasRemaining()) {
-                // Data not fully written, register for write
+                
                 connection.metadata.put("pendingWrite", buffer);
                 channel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, connection);
             } else {
@@ -523,9 +523,9 @@ public class NetworkTransport {
         }
     }
     
-    /**
-     * Find channel for connection
-     */
+    
+
+
     private SocketChannel findChannelForConnection(NetworkConnection connection) {
         for (SelectionKey key : selector.keys()) {
             if (key.attachment() == connection && key.channel() instanceof SocketChannel) {
@@ -535,9 +535,9 @@ public class NetworkTransport {
         return null;
     }
     
-    /**
-     * Close connection
-     */
+    
+
+
     public void closeConnection(NetworkConnection connection) {
         connection.connectionLock.lock();
         try {
@@ -552,7 +552,7 @@ public class NetworkTransport {
                 try {
                     channel.close();
                 } catch (IOException e) {
-                    // Ignore close errors
+                    
                 }
             }
             
@@ -562,7 +562,7 @@ public class NetworkTransport {
             connections.remove(connection.connectionId);
             addressToConnection.remove(connection.remoteAddress);
             
-            // Notify callback
+            
             if (messageCallback != null) {
                 messageCallback.onConnectionClosed(connection);
             }
@@ -571,9 +571,9 @@ public class NetworkTransport {
         }
     }
     
-    /**
-     * Cleanup idle connections
-     */
+    
+
+
     private void cleanupIdleConnections() {
         long now = System.currentTimeMillis();
         long idleTimeout = config.readTimeout * 2;
@@ -586,9 +586,9 @@ public class NetworkTransport {
         }
     }
     
-    /**
-     * Cleanup closed connections
-     */
+    
+
+
     private void cleanupClosedConnections() {
         Iterator<Map.Entry<Long, NetworkConnection>> it = connections.entrySet().iterator();
         while (it.hasNext()) {
@@ -603,46 +603,46 @@ public class NetworkTransport {
         }
     }
     
-    /**
-     * Get statistics
-     */
+    
+
+
     public TransportStats getStats() {
         return stats;
     }
     
-    /**
-     * Get all connections
-     */
+    
+
+
     public Collection<NetworkConnection> getConnections() {
         return new ArrayList<>(connections.values());
     }
     
-    /**
-     * Get connection by ID
-     */
+    
+
+
     public NetworkConnection getConnection(long connectionId) {
         return connections.get(connectionId);
     }
     
-    /**
-     * Shutdown transport
-     */
+    
+
+
     public void shutdown() {
         shutdown = true;
         
-        // Close all connections
+        
         for (NetworkConnection connection : connections.values()) {
             closeConnection(connection);
         }
         
-        // Close selector
+        
         try {
             selector.close();
         } catch (IOException e) {
-            // Ignore close errors
+            
         }
         
-        // Shutdown executors
+        
         ioExecutor.shutdown();
         scheduledExecutor.shutdown();
         

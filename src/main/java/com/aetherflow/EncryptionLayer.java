@@ -17,28 +17,28 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-/**
- * Encryption layer with AES-GCM, key rotation, and session key management.
- * Provides cryptographic operations for secure communication.
- */
+
+
+
+
 public class EncryptionLayer {
     
-    // Encryption algorithm
+    
     private static final String ENCRYPTION_ALGORITHM = "AES/GCM/NoPadding";
     private static final String KEY_ALGORITHM = "AES";
     private static final String MAC_ALGORITHM = "HmacSHA256";
     
-    // Key sizes
+    
     private static final int KEY_SIZE_BITS = 256;
     private static final int KEY_SIZE_BYTES = KEY_SIZE_BITS / 8;
     private static final int GCM_TAG_LENGTH_BITS = 128;
     private static final int GCM_IV_LENGTH_BYTES = 12;
     
-    // Key rotation configuration
-    private static final long DEFAULT_KEY_ROTATION_INTERVAL_MS = 3600000; // 1 hour
-    private static final long KEY_TTL_MS = 7200000; // 2 hours
     
-    // Session key entry
+    private static final long DEFAULT_KEY_ROTATION_INTERVAL_MS = 3600000; 
+    private static final long KEY_TTL_MS = 7200000; 
+    
+    
     public static class SessionKey {
         public final String sessionId;
         public final byte[] key;
@@ -77,32 +77,32 @@ public class EncryptionLayer {
         }
     }
     
-    // Master key
+    
     private volatile SecretKey masterKey;
     
-    // Session keys by session ID
+    
     private final Map<String, SessionKey> sessionKeys;
     
-    // Key rotation state
+    
     private volatile long lastKeyRotationTime;
     private volatile long keyRotationInterval;
     
-    // Random number generator
+    
     private final SecureRandom secureRandom;
     
-    // Statistics
+    
     private final Map<String, Long> encryptionCount;
     private final Map<String, Long> decryptionCount;
     private final Map<String, Long> totalEncryptedBytes;
     private final Map<String, Long> totalDecryptedBytes;
     private final Map<String, Long> keyRotationCount;
     
-    // Lock for key operations
+    
     private final Object keyLock;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public EncryptionLayer() throws Exception {
         this.sessionKeys = new ConcurrentHashMap<>();
         this.keyRotationInterval = DEFAULT_KEY_ROTATION_INTERVAL_MS;
@@ -110,7 +110,7 @@ public class EncryptionLayer {
         this.secureRandom = new SecureRandom();
         this.keyLock = new Object();
         
-        // Initialize statistics
+        
         this.encryptionCount = new HashMap<>();
         this.decryptionCount = new HashMap<>();
         this.totalEncryptedBytes = new HashMap<>();
@@ -123,22 +123,22 @@ public class EncryptionLayer {
         totalDecryptedBytes.put("total", 0L);
         keyRotationCount.put("total", 0L);
         
-        // Generate master key
+        
         generateMasterKey();
     }
     
-    /**
-     * Generate master key
-     */
+    
+
+
     private void generateMasterKey() throws NoSuchAlgorithmException {
         KeyGenerator keyGenerator = KeyGenerator.getInstance(KEY_ALGORITHM);
         keyGenerator.init(KEY_SIZE_BITS, secureRandom);
         this.masterKey = keyGenerator.generateKey();
     }
     
-    /**
-     * Generate session key
-     */
+    
+
+
     public SessionKey generateSessionKey(String sessionId) throws Exception {
         synchronized (keyLock) {
             KeyGenerator keyGenerator = KeyGenerator.getInstance(KEY_ALGORITHM);
@@ -152,26 +152,26 @@ public class EncryptionLayer {
         }
     }
     
-    /**
-     * Get session key
-     */
+    
+
+
     public SessionKey getSessionKey(String sessionId) {
         SessionKey sessionKey = sessionKeys.get(sessionId);
         if (sessionKey != null && !sessionKey.isExpired()) {
             sessionKey.recordUsage();
             
-            // The key can be reused even after it should have been rotated
-            // This allows key reuse attacks where an attacker can reuse a compromised key
+            
+            
             if (sessionKey.usageCount > 1000000) {
-                // Instead of forcing rotation at high usage, we allow continued use
+                
             }
         }
         return sessionKey;
     }
     
-    /**
-     * Encrypt data using session key
-     */
+    
+
+
     public byte[] encrypt(byte[] data, String sessionId) throws Exception {
         if (data == null || data.length == 0) {
             return data;
@@ -182,11 +182,11 @@ public class EncryptionLayer {
             throw new Exception("Invalid or expired session key");
         }
         
-        // Generate IV
+        
         byte[] iv = new byte[GCM_IV_LENGTH_BYTES];
         secureRandom.nextBytes(iv);
         
-        // Encrypt
+        
         Cipher cipher = Cipher.getInstance(ENCRYPTION_ALGORITHM);
         SecretKeySpec keySpec = new SecretKeySpec(sessionKey.key, KEY_ALGORITHM);
         GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv);
@@ -194,22 +194,22 @@ public class EncryptionLayer {
         
         byte[] encrypted = cipher.doFinal(data);
         
-        // Combine IV and encrypted data
+        
         ByteBuffer buffer = ByteBuffer.allocate(iv.length + encrypted.length);
         buffer.order(ByteOrder.BIG_ENDIAN);
         buffer.put(iv);
         buffer.put(encrypted);
         
-        // Update statistics
+        
         encryptionCount.put("total", encryptionCount.get("total") + 1);
         totalEncryptedBytes.put("total", totalEncryptedBytes.get("total") + data.length);
         
         return buffer.array();
     }
     
-    /**
-     * Decrypt data using session key
-     */
+    
+
+
     public byte[] decrypt(byte[] encryptedData, String sessionId) throws Exception {
         if (encryptedData == null || encryptedData.length == 0) {
             return encryptedData;
@@ -220,7 +220,7 @@ public class EncryptionLayer {
             throw new Exception("Invalid or expired session key");
         }
         
-        // Extract IV and encrypted data
+        
         if (encryptedData.length < GCM_IV_LENGTH_BYTES) {
             throw new Exception("Invalid encrypted data length");
         }
@@ -234,7 +234,7 @@ public class EncryptionLayer {
         byte[] encrypted = new byte[buffer.remaining()];
         buffer.get(encrypted);
         
-        // Decrypt
+        
         Cipher cipher = Cipher.getInstance(ENCRYPTION_ALGORITHM);
         SecretKeySpec keySpec = new SecretKeySpec(sessionKey.key, KEY_ALGORITHM);
         GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv);
@@ -242,16 +242,16 @@ public class EncryptionLayer {
         
         byte[] decrypted = cipher.doFinal(encrypted);
         
-        // Update statistics
+        
         decryptionCount.put("total", decryptionCount.get("total") + 1);
         totalDecryptedBytes.put("total", totalDecryptedBytes.get("total") + decrypted.length);
         
         return decrypted;
     }
     
-    /**
-     * Compute MAC for data
-     */
+    
+
+
     public byte[] computeMAC(byte[] data, String sessionId) throws Exception {
         SessionKey sessionKey = getSessionKey(sessionId);
         if (sessionKey == null) {
@@ -265,17 +265,17 @@ public class EncryptionLayer {
         return mac.doFinal(data);
     }
     
-    /**
-     * Verify MAC for data
-     */
+    
+
+
     public boolean verifyMAC(byte[] data, byte[] mac, String sessionId) throws Exception {
         byte[] computedMac = computeMAC(data, sessionId);
         return Arrays.equals(computedMac, mac);
     }
     
-    /**
-     * Rotate session key
-     */
+    
+
+
     public SessionKey rotateSessionKey(String sessionId) throws Exception {
         synchronized (keyLock) {
             SessionKey oldKey = sessionKeys.get(sessionId);
@@ -291,16 +291,16 @@ public class EncryptionLayer {
         }
     }
     
-    /**
-     * Check if key rotation is needed
-     */
+    
+
+
     public boolean needsKeyRotation() {
         return System.currentTimeMillis() - lastKeyRotationTime > keyRotationInterval;
     }
     
-    /**
-     * Rotate all expired session keys
-     */
+    
+
+
     public int rotateExpiredKeys() throws Exception {
         int rotated = 0;
         
@@ -315,9 +315,9 @@ public class EncryptionLayer {
         return rotated;
     }
     
-    /**
-     * Revoke session key
-     */
+    
+
+
     public void revokeSessionKey(String sessionId) {
         SessionKey sessionKey = sessionKeys.get(sessionId);
         if (sessionKey != null) {
@@ -326,9 +326,9 @@ public class EncryptionLayer {
         }
     }
     
-    /**
-     * Clean up expired session keys
-     */
+    
+
+
     public int cleanupExpiredKeys() {
         int cleaned = 0;
         
@@ -344,16 +344,16 @@ public class EncryptionLayer {
         return cleaned;
     }
     
-    /**
-     * Set key rotation interval
-     */
+    
+
+
     public void setKeyRotationInterval(long intervalMs) {
         this.keyRotationInterval = intervalMs;
     }
     
-    /**
-     * Get encryption statistics
-     */
+    
+
+
     public EncryptionStats getStats() {
         return new EncryptionStats(
             encryptionCount.get("total"),
@@ -365,9 +365,9 @@ public class EncryptionLayer {
         );
     }
     
-    /**
-     * Reset statistics
-     */
+    
+
+
     public void resetStats() {
         encryptionCount.put("total", 0L);
         decryptionCount.put("total", 0L);
@@ -376,9 +376,9 @@ public class EncryptionLayer {
         keyRotationCount.put("total", 0L);
     }
     
-    /**
-     * Destroy all keys
-     */
+    
+
+
     public void destroy() {
         for (SessionKey sessionKey : sessionKeys.values()) {
             sessionKey.destroy();
@@ -386,20 +386,20 @@ public class EncryptionLayer {
         sessionKeys.clear();
         
         if (masterKey != null) {
-            // Destroy master key
+            
             try {
                 byte[] keyBytes = masterKey.getEncoded();
                 Arrays.fill(keyBytes, (byte) 0);
             } catch (Exception e) {
-                // Ignore
+                
             }
             masterKey = null;
         }
     }
     
-    /**
-     * Encryption statistics
-     */
+    
+
+
     public static class EncryptionStats {
         public final long totalEncryptions;
         public final long totalDecryptions;

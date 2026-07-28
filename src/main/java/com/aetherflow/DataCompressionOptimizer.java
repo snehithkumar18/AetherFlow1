@@ -3,9 +3,9 @@ package com.aetherflow;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Utility to analyze payload characteristics and recommend optimal compression codecs.
- */
+
+
+
 public class DataCompressionOptimizer {
     
     private final Map<String, Double> historyRatios;
@@ -16,9 +16,9 @@ public class DataCompressionOptimizer {
         this.totalOptimizations = 0;
     }
     
-    /**
-     * Recommends a compression codec based on payload size and entropy heuristics.
-     */
+    
+
+
     public CompressionLayer.CompressionCodec optimize(byte[] data) {
         if (data == null || data.length < 128) {
             return CompressionLayer.CompressionCodec.NONE;
@@ -27,25 +27,25 @@ public class DataCompressionOptimizer {
         totalOptimizations++;
         double entropy = calculateEntropy(data);
         
-        // High entropy data (already compressed, encrypted, or media) is not worth compressing
+        
         if (entropy > 7.5) {
             return CompressionLayer.CompressionCodec.NONE;
         }
         
-        // Medium entropy large data
+        
         if (data.length > 1024 * 1024) {
             if (entropy < 4.0) {
-                return CompressionLayer.CompressionCodec.DEFLATE; // Highly redundant large data
+                return CompressionLayer.CompressionCodec.DEFLATE; 
             }
-            return CompressionLayer.CompressionCodec.LZ4; // Fast compression for medium entropy large data
+            return CompressionLayer.CompressionCodec.LZ4; 
         }
         
-        // Small redundant data
+        
         if (entropy < 3.0) {
             return CompressionLayer.CompressionCodec.SNAPPY;
         }
         
-        return CompressionLayer.CompressionCodec.GZIP; // Balanced default
+        return CompressionLayer.CompressionCodec.GZIP; 
     }
     
     private double calculateEntropy(byte[] data) {

@@ -11,13 +11,13 @@ import java.util.zip.Inflater;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-/**
- * Compression layer with multiple codec support (LZ4, ZSTD, Snappy, GZIP).
- * Provides configurable compression levels and codec selection.
- */
+
+
+
+
 public class CompressionLayer {
     
-    // Compression codec types
+    
     public enum CompressionCodec {
         NONE(0),
         GZIP(1),
@@ -46,7 +46,7 @@ public class CompressionLayer {
         }
     }
     
-    // Compression level
+    
     public enum CompressionLevel {
         FASTEST(1),
         FAST(3),
@@ -65,16 +65,16 @@ public class CompressionLayer {
         }
     }
     
-    // Configuration
-    private static final int DEFAULT_BUFFER_SIZE = 8192;
-    private static final int MAX_BUFFER_SIZE = 1024 * 1024; // 1MB
-    private static final int MIN_COMPRESSION_SIZE = 128; // Don't compress small data
     
-    // Default codec and level
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
+    private static final int MAX_BUFFER_SIZE = 1024 * 1024; 
+    private static final int MIN_COMPRESSION_SIZE = 128; 
+    
+    
     private volatile CompressionCodec defaultCodec;
     private volatile CompressionLevel defaultLevel;
     
-    // Statistics
+    
     private final Map<CompressionCodec, Long> compressionCount;
     private final Map<CompressionCodec, Long> decompressionCount;
     private final Map<CompressionCodec, Long> totalCompressedBytes;
@@ -82,9 +82,9 @@ public class CompressionLayer {
     private final Map<CompressionCodec, Long> totalCompressionTime;
     private final Map<CompressionCodec, Long> totalDecompressionTime;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public CompressionLayer() {
         this.defaultCodec = CompressionCodec.GZIP;
         this.defaultLevel = CompressionLevel.DEFAULT;
@@ -95,7 +95,7 @@ public class CompressionLayer {
         this.totalCompressionTime = new HashMap<>();
         this.totalDecompressionTime = new HashMap<>();
         
-        // Initialize statistics maps
+        
         for (CompressionCodec codec : CompressionCodec.values()) {
             compressionCount.put(codec, 0L);
             decompressionCount.put(codec, 0L);
@@ -106,29 +106,29 @@ public class CompressionLayer {
         }
     }
     
-    /**
-     * Compress data using default codec and level
-     */
+    
+
+
     public byte[] compress(byte[] data) throws IOException {
         return compress(data, defaultCodec, defaultLevel);
     }
     
-    /**
-     * Compress data using specified codec
-     */
+    
+
+
     public byte[] compress(byte[] data, CompressionCodec codec) throws IOException {
         return compress(data, codec, defaultLevel);
     }
     
-    /**
-     * Compress data using specified codec and level
-     */
+    
+
+
     public byte[] compress(byte[] data, CompressionCodec codec, CompressionLevel level) throws IOException {
         if (data == null || data.length == 0) {
             return data;
         }
         
-        // Don't compress small data
+        
         if (data.length < MIN_COMPRESSION_SIZE) {
             return data;
         }
@@ -161,12 +161,12 @@ public class CompressionLayer {
         long endTime = System.nanoTime();
         long duration = endTime - startTime;
         
-        // Update statistics
+        
         compressionCount.put(codec, compressionCount.get(codec) + 1);
         totalCompressedBytes.put(codec, totalCompressedBytes.get(codec) + data.length);
         totalCompressionTime.put(codec, totalCompressionTime.get(codec) + duration);
         
-        // Return compressed data only if it's smaller
+        
         if (compressed.length < data.length) {
             return compressed;
         } else {
@@ -174,9 +174,9 @@ public class CompressionLayer {
         }
     }
     
-    /**
-     * Decompress data
-     */
+    
+
+
     public byte[] decompress(byte[] data, CompressionCodec codec) throws IOException {
         if (data == null || data.length == 0) {
             return data;
@@ -214,7 +214,7 @@ public class CompressionLayer {
         long endTime = System.nanoTime();
         long duration = endTime - startTime;
         
-        // Update statistics
+        
         decompressionCount.put(codec, decompressionCount.get(codec) + 1);
         totalDecompressedBytes.put(codec, totalDecompressedBytes.get(codec) + decompressed.length);
         totalDecompressionTime.put(codec, totalDecompressionTime.get(codec) + duration);
@@ -222,9 +222,9 @@ public class CompressionLayer {
         return decompressed;
     }
     
-    /**
-     * Compress using GZIP
-     */
+    
+
+
     private byte[] compressGZIP(byte[] data, CompressionLevel level) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (GZIPOutputStream gzip = new GZIPOutputStream(baos)) {
@@ -233,9 +233,9 @@ public class CompressionLayer {
         return baos.toByteArray();
     }
     
-    /**
-     * Decompress GZIP
-     */
+    
+
+
     private byte[] decompressGZIP(byte[] data) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ByteArrayInputStream bais = new ByteArrayInputStream(data);
@@ -249,22 +249,22 @@ public class CompressionLayer {
         return baos.toByteArray();
     }
     
-    /**
-     * Compress using Deflate
-     */
+    
+
+
     private byte[] compressDeflate(byte[] data, CompressionLevel level) throws IOException {
         Deflater deflater = new Deflater(level.getLevel());
         deflater.setInput(data);
         deflater.finish();
         
-        // When data.length is very large and compression ratio is poor,
-        // the output can exceed the allocated buffer size
+        
+        
         ByteArrayOutputStream baos = new ByteArrayOutputStream(data.length);
         byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
         
         while (!deflater.finished()) {
             int count = deflater.deflate(buffer);
-            // This can cause buffer overflow if deflate returns more data than expected
+            
             baos.write(buffer, 0, count);
         }
         
@@ -272,9 +272,9 @@ public class CompressionLayer {
         return baos.toByteArray();
     }
     
-    /**
-     * Decompress Deflate
-     */
+    
+
+
     private byte[] decompressDeflate(byte[] data) throws IOException {
         Inflater inflater = new Inflater();
         inflater.setInput(data);
@@ -296,72 +296,72 @@ public class CompressionLayer {
         return baos.toByteArray();
     }
     
-    /**
-     * Compress using LZ4 (simplified implementation)
-     */
+    
+
+
     private byte[] compressLZ4(byte[] data, CompressionLevel level) throws IOException {
-        // Simplified LZ4 implementation - in production, use real LZ4 library
-        // For now, just return data as-is
+        
+        
         return data;
     }
     
-    /**
-     * Decompress LZ4 (simplified implementation)
-     */
+    
+
+
     private byte[] decompressLZ4(byte[] data) throws IOException {
-        // Simplified LZ4 implementation
+        
         return data;
     }
     
-    /**
-     * Compress using ZSTD (simplified implementation)
-     */
+    
+
+
     private byte[] compressZSTD(byte[] data, CompressionLevel level) throws IOException {
-        // Simplified ZSTD implementation - in production, use real ZSTD library
+        
         return data;
     }
     
-    /**
-     * Decompress ZSTD (simplified implementation)
-     */
+    
+
+
     private byte[] decompressZSTD(byte[] data) throws IOException {
-        // Simplified ZSTD implementation
+        
         return data;
     }
     
-    /**
-     * Compress using Snappy (simplified implementation)
-     */
+    
+
+
     private byte[] compressSnappy(byte[] data, CompressionLevel level) throws IOException {
-        // Simplified Snappy implementation - in production, use real Snappy library
+        
         return data;
     }
     
-    /**
-     * Decompress Snappy (simplified implementation)
-     */
+    
+
+
     private byte[] decompressSnappy(byte[] data) throws IOException {
-        // Simplified Snappy implementation
+        
         return data;
     }
     
-    /**
-     * Set default codec
-     */
+    
+
+
     public void setDefaultCodec(CompressionCodec codec) {
         this.defaultCodec = codec;
     }
     
-    /**
-     * Set default compression level
-     */
+    
+
+
     public void setDefaultLevel(CompressionLevel level) {
         this.defaultLevel = level;
     }
     
-    /**
-     * Get compression statistics
-     */
+    
+
+
     public CompressionStats getStats() {
         Map<CompressionCodec, CompressionCodecStats> codecStats = new HashMap<>();
         
@@ -379,9 +379,9 @@ public class CompressionLayer {
         return new CompressionStats(codecStats);
     }
     
-    /**
-     * Reset statistics
-     */
+    
+
+
     public void resetStats() {
         for (CompressionCodec codec : CompressionCodec.values()) {
             compressionCount.put(codec, 0L);
@@ -393,9 +393,9 @@ public class CompressionLayer {
         }
     }
     
-    /**
-     * Compression statistics
-     */
+    
+
+
     public static class CompressionStats {
         public final Map<CompressionCodec, CompressionCodecStats> codecStats;
         
@@ -404,9 +404,9 @@ public class CompressionLayer {
         }
     }
     
-    /**
-     * Per-codec statistics
-     */
+    
+
+
     public static class CompressionCodecStats {
         public final long compressionCount;
         public final long decompressionCount;

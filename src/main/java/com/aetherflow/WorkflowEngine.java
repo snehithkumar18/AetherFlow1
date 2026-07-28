@@ -6,14 +6,14 @@ import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 import java.util.function.*;
 
-/**
- * Workflow engine for AetherFlow.
- * Manages complex workflows with task dependencies, parallel execution, and state management.
- * Supports workflow orchestration, error handling, and recovery.
- */
+
+
+
+
+
 public class WorkflowEngine {
     
-    // Task state
+    
     public enum TaskState {
         PENDING,
         RUNNING,
@@ -23,7 +23,7 @@ public class WorkflowEngine {
         SKIPPED
     }
     
-    // Workflow state
+    
     public enum WorkflowState {
         CREATED,
         RUNNING,
@@ -33,7 +33,7 @@ public class WorkflowEngine {
         PAUSED
     }
     
-    // Task definition
+    
     public static class TaskDefinition {
         public final String taskId;
         public final String taskName;
@@ -81,7 +81,7 @@ public class WorkflowEngine {
         }
     }
     
-    // Task result
+    
     public static class TaskResult {
         public final boolean success;
         public final Object result;
@@ -104,7 +104,7 @@ public class WorkflowEngine {
         }
     }
     
-    // Workflow definition
+    
     public static class WorkflowDefinition {
         public final String workflowId;
         public final String workflowName;
@@ -173,7 +173,7 @@ public class WorkflowEngine {
         }
     }
     
-    // Workflow engine configuration
+    
     public static class WorkflowEngineConfig {
         public int maxConcurrentTasks;
         public long taskTimeout;
@@ -186,9 +186,9 @@ public class WorkflowEngine {
         
         public WorkflowEngineConfig() {
             this.maxConcurrentTasks = 10;
-            this.taskTimeout = 300000; // 5 minutes
+            this.taskTimeout = 300000; 
             this.maxRetries = 3;
-            this.retryDelay = 1000; // 1 second
+            this.retryDelay = 1000; 
             this.enableParallelExecution = true;
             this.enableTaskTimeout = true;
             this.enableWorkflowPersistence = false;
@@ -196,7 +196,7 @@ public class WorkflowEngine {
         }
     }
     
-    // Workflow engine statistics
+    
     public static class WorkflowEngineStats {
         public final AtomicLong totalWorkflows;
         public final AtomicLong completedWorkflows;
@@ -254,36 +254,36 @@ public class WorkflowEngine {
         }
     }
     
-    // Workflow engine configuration
+    
     private final WorkflowEngineConfig config;
     
-    // Active workflows
+    
     private final Map<String, WorkflowDefinition> activeWorkflows;
     
-    // Completed workflows
+    
     private final Map<String, WorkflowDefinition> completedWorkflows;
     
-    // Task execution semaphore
+    
     private final Semaphore taskSemaphore;
     
-    // Statistics
+    
     private final WorkflowEngineStats stats;
     
-    // Lock for workflow management
+    
     private final ReentrantLock workflowLock;
     
-    // Executor service for task execution
+    
     private final ExecutorService taskExecutor;
     
-    // Shutdown flag
+    
     private volatile boolean shutdown;
     
-    // Workflow completion callback
+    
     private volatile Consumer<WorkflowDefinition> workflowCompletionCallback;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public WorkflowEngine(WorkflowEngineConfig config) {
         this.config = config;
         this.activeWorkflows = new ConcurrentHashMap<>();
@@ -295,16 +295,16 @@ public class WorkflowEngine {
         this.shutdown = false;
     }
     
-    /**
-     * Default constructor
-     */
+    
+
+
     public WorkflowEngine() {
         this(new WorkflowEngineConfig());
     }
     
-    /**
-     * Submit workflow
-     */
+    
+
+
     public void submitWorkflow(WorkflowDefinition workflow) {
         workflowLock.lock();
         try {
@@ -313,7 +313,7 @@ public class WorkflowEngine {
             activeWorkflows.put(workflow.workflowId, workflow);
             stats.recordWorkflowStart();
             
-            // Start workflow execution
+            
             executeWorkflow(workflow);
             
         } finally {
@@ -321,15 +321,15 @@ public class WorkflowEngine {
         }
     }
     
-    /**
-     * Execute workflow
-     */
+    
+
+
     private void executeWorkflow(WorkflowDefinition workflow) {
         taskExecutor.submit(() -> {
             while (!shutdown && workflow.state == WorkflowState.RUNNING) {
                 workflow.workflowLock.lock();
                 try {
-                    // Check if workflow is complete
+                    
                     if (workflow.isComplete()) {
                         workflow.state = WorkflowState.COMPLETED;
                         workflow.endTime = System.currentTimeMillis();
@@ -343,7 +343,7 @@ public class WorkflowEngine {
                         break;
                     }
                     
-                    // Check if workflow has failed
+                    
                     if (workflow.hasFailed()) {
                         workflow.state = WorkflowState.FAILED;
                         workflow.endTime = System.currentTimeMillis();
@@ -357,33 +357,33 @@ public class WorkflowEngine {
                         break;
                     }
                     
-                    // Get executable tasks
+                    
                     List<TaskDefinition> executableTasks = workflow.getExecutableTasks();
                     
                     if (executableTasks.isEmpty()) {
-                        // No tasks ready to execute, wait a bit
+                        
                         Thread.sleep(100);
                         continue;
                     }
                     
-                    // Execute tasks
+                    
                     if (config.enableParallelExecution) {
-                        // Execute in parallel
+                        
                         List<Future<?>> futures = new ArrayList<>();
                         for (TaskDefinition task : executableTasks) {
                             futures.add(taskExecutor.submit(() -> executeTask(workflow, task)));
                         }
                         
-                        // Wait for all tasks to complete
+                        
                         for (Future<?> future : futures) {
                             try {
                                 future.get();
                             } catch (Exception e) {
-                                // Task execution error handled in executeTask
+                                
                             }
                         }
                     } else {
-                        // Execute sequentially
+                        
                         for (TaskDefinition task : executableTasks) {
                             executeTask(workflow, task);
                         }
@@ -400,9 +400,9 @@ public class WorkflowEngine {
         });
     }
     
-    /**
-     * Execute task
-     */
+    
+
+
     private void executeTask(WorkflowDefinition workflow, TaskDefinition task) {
         task.taskLock.lock();
         try {
@@ -410,11 +410,11 @@ public class WorkflowEngine {
             task.startTime = System.currentTimeMillis();
             stats.recordTaskStart(task.taskName);
             
-            // Acquire semaphore
+            
             taskSemaphore.acquire();
             
             try {
-                // Execute task with timeout
+                
                 Future<TaskResult> future = taskExecutor.submit(() -> {
                     return task.taskExecutor.get();
                 });
@@ -432,7 +432,7 @@ public class WorkflowEngine {
                     task.state = TaskState.COMPLETED;
                     stats.recordTaskComplete(true);
                 } else {
-                    // Retry logic
+                    
                     if (task.retryCount < task.maxRetries) {
                         task.retryCount++;
                         stats.recordRetry();
@@ -471,9 +471,9 @@ public class WorkflowEngine {
         }
     }
     
-    /**
-     * Cancel workflow
-     */
+    
+
+
     public void cancelWorkflow(String workflowId) {
         workflowLock.lock();
         try {
@@ -482,7 +482,7 @@ public class WorkflowEngine {
                 workflow.state = WorkflowState.CANCELLED;
                 workflow.endTime = System.currentTimeMillis();
                 
-                // Cancel all running tasks
+                
                 for (TaskDefinition task : workflow.tasks) {
                     if (task.state == TaskState.RUNNING) {
                         task.state = TaskState.CANCELLED;
@@ -497,9 +497,9 @@ public class WorkflowEngine {
         }
     }
     
-    /**
-     * Pause workflow
-     */
+    
+
+
     public void pauseWorkflow(String workflowId) {
         workflowLock.lock();
         try {
@@ -512,9 +512,9 @@ public class WorkflowEngine {
         }
     }
     
-    /**
-     * Resume workflow
-     */
+    
+
+
     public void resumeWorkflow(String workflowId) {
         workflowLock.lock();
         try {
@@ -528,9 +528,9 @@ public class WorkflowEngine {
         }
     }
     
-    /**
-     * Get workflow
-     */
+    
+
+
     public WorkflowDefinition getWorkflow(String workflowId) {
         workflowLock.lock();
         try {
@@ -544,9 +544,9 @@ public class WorkflowEngine {
         }
     }
     
-    /**
-     * Get active workflows
-     */
+    
+
+
     public Collection<WorkflowDefinition> getActiveWorkflows() {
         workflowLock.lock();
         try {
@@ -556,9 +556,9 @@ public class WorkflowEngine {
         }
     }
     
-    /**
-     * Get completed workflows
-     */
+    
+
+
     public Collection<WorkflowDefinition> getCompletedWorkflows() {
         workflowLock.lock();
         try {
@@ -568,30 +568,30 @@ public class WorkflowEngine {
         }
     }
     
-    /**
-     * Set workflow completion callback
-     */
+    
+
+
     public void setWorkflowCompletionCallback(Consumer<WorkflowDefinition> callback) {
         this.workflowCompletionCallback = callback;
     }
     
-    /**
-     * Get statistics
-     */
+    
+
+
     public WorkflowEngineStats getStats() {
         return stats;
     }
     
-    /**
-     * Get configuration
-     */
+    
+
+
     public WorkflowEngineConfig getConfig() {
         return config;
     }
     
-    /**
-     * Clear completed workflows
-     */
+    
+
+
     public void clearCompletedWorkflows() {
         workflowLock.lock();
         try {
@@ -601,13 +601,13 @@ public class WorkflowEngine {
         }
     }
     
-    /**
-     * Shutdown workflow engine
-     */
+    
+
+
     public void shutdown() {
         shutdown = true;
         
-        // Cancel all active workflows
+        
         workflowLock.lock();
         try {
             for (String workflowId : new ArrayList<>(activeWorkflows.keySet())) {
@@ -617,7 +617,7 @@ public class WorkflowEngine {
             workflowLock.unlock();
         }
         
-        // Shutdown executor
+        
         taskExecutor.shutdown();
         try {
             taskExecutor.awaitTermination(5, TimeUnit.SECONDS);

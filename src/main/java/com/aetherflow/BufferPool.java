@@ -11,13 +11,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * Buffer pool for DirectByteBuffer management with sophisticated lifecycle.
- * Provides pooling for zero-copy operations with reference tracking.
- */
+
+
+
+
 public class BufferPool {
     
-    // Buffer entry in the pool
+    
     public static class BufferEntry {
         public final ByteBuffer buffer;
         public final int size;
@@ -67,41 +67,41 @@ public class BufferPool {
         }
     }
     
-    // Pool configuration
-    private static final int DEFAULT_BUFFER_SIZE = 8192; // 8KB
-    private static final int MAX_BUFFER_SIZE = 1024 * 1024; // 1MB
-    private static final int MAX_POOL_SIZE = 1000;
-    private static final long BUFFER_TTL_MS = 300000; // 5 minutes
-    private static final long CLEANUP_INTERVAL_MS = 60000; // 1 minute
     
-    // Buffer pools by size
+    private static final int DEFAULT_BUFFER_SIZE = 8192; 
+    private static final int MAX_BUFFER_SIZE = 1024 * 1024; 
+    private static final int MAX_POOL_SIZE = 1000;
+    private static final long BUFFER_TTL_MS = 300000; 
+    private static final long CLEANUP_INTERVAL_MS = 60000; 
+    
+    
     private final Map<Integer, List<BufferEntry>> bufferPools;
     
-    // Buffer entries by ID for tracking
+    
     private final Map<Long, BufferEntry> bufferById;
     
-    // Atomic ID generator
+    
     private final AtomicLong bufferIdGenerator;
     
-    // Lock for pool operations
+    
     private final ReentrantLock poolLock;
     
-    // Statistics
+    
     private final AtomicInteger totalAllocations;
     private final AtomicInteger totalReuses;
     private final AtomicInteger totalReleases;
     private final AtomicInteger totalEvictions;
     private final AtomicInteger totalCleanups;
     
-    // Pool pressure indicator
+    
     private volatile boolean underPressure;
     
-    // Last cleanup time
+    
     private volatile long lastCleanupTime;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public BufferPool() {
         this.bufferPools = new ConcurrentHashMap<>();
         this.bufferById = new ConcurrentHashMap<>();
@@ -116,22 +116,22 @@ public class BufferPool {
         this.lastCleanupTime = System.currentTimeMillis();
     }
     
-    /**
-     * Acquire a buffer of the specified size
-     */
+    
+
+
     public BufferEntry acquireBuffer(int size) {
         if (size <= 0 || size > MAX_BUFFER_SIZE) {
             size = DEFAULT_BUFFER_SIZE;
         }
         
-        // Round up to nearest power of 2 for better pooling
+        
         int roundedSize = roundToPowerOfTwo(size);
         
         poolLock.lock();
         try {
             List<BufferEntry> pool = bufferPools.computeIfAbsent(roundedSize, k -> new ArrayList<>());
             
-            // Try to find an available buffer
+            
             BufferEntry entry = findAvailableBuffer(pool);
             
             if (entry != null) {
@@ -140,7 +140,7 @@ public class BufferPool {
                 return entry;
             }
             
-            // No available buffer, allocate new one
+            
             if (pool.size() < MAX_POOL_SIZE) {
                 entry = allocateNewBuffer(roundedSize);
                 entry.acquire();
@@ -148,7 +148,7 @@ public class BufferPool {
                 return entry;
             }
             
-            // Pool is full, evict oldest idle buffer
+            
             entry = evictBuffer(pool);
             if (entry != null) {
                 entry.acquire();
@@ -157,7 +157,7 @@ public class BufferPool {
                 return entry;
             }
             
-            // Still no buffer available, allocate anyway (pressure mode)
+            
             underPressure = true;
             entry = allocateNewBuffer(roundedSize);
             entry.acquire();
@@ -169,9 +169,9 @@ public class BufferPool {
         }
     }
     
-    /**
-     * Release a buffer back to the pool
-     */
+    
+
+
     public void releaseBuffer(BufferEntry entry) {
         if (entry == null) {
             return;
@@ -188,10 +188,10 @@ public class BufferPool {
                 pool.add(entry);
             }
             
-            // Clear buffer for reuse
+            
             entry.clear();
             
-            // Check if cleanup is needed
+            
             if (System.currentTimeMillis() - lastCleanupTime > CLEANUP_INTERVAL_MS) {
                 cleanupExpiredBuffers();
             }
@@ -201,9 +201,9 @@ public class BufferPool {
         }
     }
     
-    /**
-     * Find an available buffer in the pool
-     */
+    
+
+
     private BufferEntry findAvailableBuffer(List<BufferEntry> pool) {
         for (BufferEntry entry : pool) {
             if (!entry.inUse) {
@@ -213,9 +213,9 @@ public class BufferPool {
         return null;
     }
     
-    /**
-     * Allocate a new buffer
-     */
+    
+
+
     private BufferEntry allocateNewBuffer(int size) {
         BufferEntry entry = new BufferEntry(size);
         long bufferId = bufferIdGenerator.incrementAndGet();
@@ -227,9 +227,9 @@ public class BufferPool {
         return entry;
     }
     
-    /**
-     * Evict the oldest idle buffer from the pool
-     */
+    
+
+
     private BufferEntry evictBuffer(List<BufferEntry> pool) {
         if (pool.isEmpty()) {
             return null;
@@ -255,9 +255,9 @@ public class BufferPool {
         return oldest;
     }
     
-    /**
-     * Clean up expired buffers
-     */
+    
+
+
     public int cleanupExpiredBuffers() {
         int cleaned = 0;
         
@@ -290,16 +290,16 @@ public class BufferPool {
         return cleaned;
     }
     
-    /**
-     * Get buffer by ID
-     */
+    
+
+
     public BufferEntry getBufferById(long bufferId) {
         return bufferById.get(bufferId);
     }
     
-    /**
-     * Round up to nearest power of 2
-     */
+    
+
+
     private int roundToPowerOfTwo(int size) {
         int power = 1;
         while (power < size && power < MAX_BUFFER_SIZE) {
@@ -308,9 +308,9 @@ public class BufferPool {
         return power;
     }
     
-    /**
-     * Get pool statistics
-     */
+    
+
+
     public PoolStats getStats() {
         int totalBuffers = 0;
         int inUseBuffers = 0;
@@ -344,9 +344,9 @@ public class BufferPool {
         );
     }
     
-    /**
-     * Reset statistics
-     */
+    
+
+
     public void resetStats() {
         totalAllocations.set(0);
         totalReuses.set(0);
@@ -355,9 +355,9 @@ public class BufferPool {
         totalCleanups.set(0);
     }
     
-    /**
-     * Clear all buffers from the pool
-     */
+    
+
+
     public void clear() {
         poolLock.lock();
         try {
@@ -369,9 +369,9 @@ public class BufferPool {
         }
     }
     
-    /**
-     * Pool statistics
-     */
+    
+
+
     public static class PoolStats {
         public final int totalBuffers;
         public final int inUseBuffers;

@@ -8,14 +8,14 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.function.*;
 
-/**
- * Configuration manager for AetherFlow.
- * Manages application configuration with support for multiple sources, hot reloading, and validation.
- * Supports file-based, environment-based, and programmatic configuration.
- */
+
+
+
+
+
 public class ConfigurationManager {
     
-    // Configuration source type
+    
     public enum ConfigSourceType {
         FILE,
         ENVIRONMENT,
@@ -25,7 +25,7 @@ public class ConfigurationManager {
         DATABASE
     }
     
-    // Configuration entry
+    
     public static class ConfigEntry {
         public final String key;
         public final String value;
@@ -67,20 +67,20 @@ public class ConfigurationManager {
         }
     }
     
-    // Configuration validator
+    
     public interface ConfigValidator {
         boolean validate(String key, String value);
         String getErrorMessage();
     }
     
-    // Configuration change listener
+    
     public interface ConfigChangeListener {
         void onConfigChanged(String key, String oldValue, String newValue);
         void onConfigAdded(String key, String value);
         void onConfigRemoved(String key);
     }
     
-    // Configuration manager configuration
+    
     public static class ConfigManagerConfig {
         public boolean enableHotReload;
         public long reloadInterval;
@@ -97,7 +97,7 @@ public class ConfigurationManager {
         
         public ConfigManagerConfig() {
             this.enableHotReload = true;
-            this.reloadInterval = 60000; // 1 minute
+            this.reloadInterval = 60000; 
             this.enableValidation = true;
             this.enableEncryption = false;
             this.encryptionKey = null;
@@ -105,13 +105,13 @@ public class ConfigurationManager {
             this.backupCount = 5;
             this.enableRemoteSync = false;
             this.remoteSyncUrl = null;
-            this.remoteSyncInterval = 300000; // 5 minutes
+            this.remoteSyncInterval = 300000; 
             this.enableCache = true;
-            this.cacheTimeout = 300000; // 5 minutes
+            this.cacheTimeout = 300000; 
         }
     }
     
-    // Configuration statistics
+    
     public static class ConfigStats {
         public final AtomicLong totalReads;
         public final AtomicLong totalWrites;
@@ -157,37 +157,37 @@ public class ConfigurationManager {
         }
     }
     
-    // Configuration manager configuration
+    
     private final ConfigManagerConfig config;
     
-    // Configuration entries
+    
     private final Map<String, ConfigEntry> configEntries;
     
-    // Configuration validators
+    
     private final Map<String, ConfigValidator> validators;
     
-    // Configuration change listeners
+    
     private final List<ConfigChangeListener> listeners;
     
-    // Cache for configuration values
+    
     private final Map<String, CacheEntry> configCache;
     
-    // Backup configurations
+    
     private final List<Map<String, ConfigEntry>> backups;
     
-    // Statistics
+    
     private final ConfigStats stats;
     
-    // Lock for configuration management
+    
     private final ReentrantReadWriteLock configLock;
     
-    // Scheduled executor for hot reload
+    
     private final ScheduledExecutorService reloadExecutor;
     
-    // Shutdown flag
+    
     private volatile boolean shutdown;
     
-    // Cache entry
+    
     private static class CacheEntry {
         public final String value;
         public final long timestamp;
@@ -202,9 +202,9 @@ public class ConfigurationManager {
         }
     }
     
-    /**
-     * Constructor
-     */
+    
+
+
     public ConfigurationManager(ConfigManagerConfig config) {
         this.config = config;
         this.configEntries = new ConcurrentHashMap<>();
@@ -217,43 +217,43 @@ public class ConfigurationManager {
         this.reloadExecutor = Executors.newSingleThreadScheduledExecutor();
         this.shutdown = false;
         
-        // Start hot reload thread
+        
         if (config.enableHotReload) {
             startHotReloadThread();
         }
     }
     
-    /**
-     * Default constructor
-     */
+    
+
+
     public ConfigurationManager() {
         this(new ConfigManagerConfig());
     }
     
-    /**
-     * Start hot reload thread
-     */
+    
+
+
     private void startHotReloadThread() {
         reloadExecutor.scheduleAtFixedRate(() -> {
             reloadConfiguration();
         }, config.reloadInterval, config.reloadInterval, TimeUnit.MILLISECONDS);
     }
     
-    /**
-     * Set configuration value
-     */
+    
+
+
     public void setConfig(String key, String value) {
         setConfig(key, value, ConfigSourceType.PROGRAMMATIC, null);
     }
     
-    /**
-     * Set configuration value with source
-     */
+    
+
+
     public void setConfig(String key, String value, ConfigSourceType source, 
                          String sourceLocation) {
         configLock.writeLock().lock();
         try {
-            // Validate if enabled
+            
             if (config.enableValidation) {
                 ConfigValidator validator = validators.get(key);
                 if (validator != null) {
@@ -272,17 +272,17 @@ public class ConfigurationManager {
             ConfigEntry entry = new ConfigEntry(key, value, source, sourceLocation, null);
             configEntries.put(key, entry);
             
-            // Invalidate cache
+            
             configCache.remove(key);
             
-            // Create backup if enabled
+            
             if (config.enableBackup) {
                 createBackup();
             }
             
             stats.recordWrite(key, source);
             
-            // Notify listeners
+            
             for (ConfigChangeListener listener : listeners) {
                 if (oldValue != null) {
                     listener.onConfigChanged(key, oldValue, value);
@@ -296,13 +296,13 @@ public class ConfigurationManager {
         }
     }
     
-    /**
-     * Get configuration value
-     */
+    
+
+
     public String getConfig(String key) {
         configLock.readLock().lock();
         try {
-            // Check cache first
+            
             if (config.enableCache) {
                 CacheEntry cached = configCache.get(key);
                 if (cached != null && !cached.isExpired(config.cacheTimeout)) {
@@ -315,7 +315,7 @@ public class ConfigurationManager {
                 return null;
             }
             
-            // Update cache
+            
             if (config.enableCache) {
                 configCache.put(key, new CacheEntry(entry.value));
             }
@@ -329,17 +329,17 @@ public class ConfigurationManager {
         }
     }
     
-    /**
-     * Get configuration value with default
-     */
+    
+
+
     public String getConfig(String key, String defaultValue) {
         String value = getConfig(key);
         return value != null ? value : defaultValue;
     }
     
-    /**
-     * Get configuration value as type
-     */
+    
+
+
     public <T> T getConfigAs(String key, Class<T> type) {
         String value = getConfig(key);
         if (value == null) {
@@ -354,17 +354,17 @@ public class ConfigurationManager {
         return entry.getValueAs(type);
     }
     
-    /**
-     * Get configuration value as type with default
-     */
+    
+
+
     public <T> T getConfigAs(String key, Class<T> type, T defaultValue) {
         T value = getConfigAs(key, type);
         return value != null ? value : defaultValue;
     }
     
-    /**
-     * Remove configuration
-     */
+    
+
+
     public void removeConfig(String key) {
         configLock.writeLock().lock();
         try {
@@ -372,7 +372,7 @@ public class ConfigurationManager {
             if (removed != null) {
                 configCache.remove(key);
                 
-                // Notify listeners
+                
                 for (ConfigChangeListener listener : listeners) {
                     listener.onConfigRemoved(key);
                 }
@@ -382,9 +382,9 @@ public class ConfigurationManager {
         }
     }
     
-    /**
-     * Check if configuration exists
-     */
+    
+
+
     public boolean hasConfig(String key) {
         configLock.readLock().lock();
         try {
@@ -394,9 +394,9 @@ public class ConfigurationManager {
         }
     }
     
-    /**
-     * Get all configuration keys
-     */
+    
+
+
     public Set<String> getConfigKeys() {
         configLock.readLock().lock();
         try {
@@ -406,9 +406,9 @@ public class ConfigurationManager {
         }
     }
     
-    /**
-     * Get all configuration entries
-     */
+    
+
+
     public Map<String, ConfigEntry> getConfigEntries() {
         configLock.readLock().lock();
         try {
@@ -418,37 +418,37 @@ public class ConfigurationManager {
         }
     }
     
-    /**
-     * Add validator
-     */
+    
+
+
     public void addValidator(String key, ConfigValidator validator) {
         validators.put(key, validator);
     }
     
-    /**
-     * Remove validator
-     */
+    
+
+
     public void removeValidator(String key) {
         validators.remove(key);
     }
     
-    /**
-     * Add change listener
-     */
+    
+
+
     public void addChangeListener(ConfigChangeListener listener) {
         listeners.add(listener);
     }
     
-    /**
-     * Remove change listener
-     */
+    
+
+
     public void removeChangeListener(ConfigChangeListener listener) {
         listeners.remove(listener);
     }
     
-    /**
-     * Load configuration from file
-     */
+    
+
+
     public void loadFromFile(String filePath) throws IOException {
         Path path = Paths.get(filePath);
         List<String> lines = Files.readAllLines(path);
@@ -468,9 +468,9 @@ public class ConfigurationManager {
         }
     }
     
-    /**
-     * Load configuration from environment
-     */
+    
+
+
     public void loadFromEnvironment() {
         Map<String, String> env = System.getenv();
         for (Map.Entry<String, String> entry : env.entrySet()) {
@@ -481,9 +481,9 @@ public class ConfigurationManager {
         }
     }
     
-    /**
-     * Load configuration from system properties
-     */
+    
+
+
     public void loadFromSystemProperties() {
         Properties props = System.getProperties();
         for (String key : props.stringPropertyNames()) {
@@ -495,9 +495,9 @@ public class ConfigurationManager {
         }
     }
     
-    /**
-     * Save configuration to file
-     */
+    
+
+
     public void saveToFile(String filePath) throws IOException {
         configLock.readLock().lock();
         try {
@@ -513,22 +513,22 @@ public class ConfigurationManager {
         }
     }
     
-    /**
-     * Create backup
-     */
+    
+
+
     private void createBackup() {
         Map<String, ConfigEntry> backup = new HashMap<>(configEntries);
         backups.add(backup);
         
-        // Keep only specified number of backups
+        
         while (backups.size() > config.backupCount) {
             backups.remove(0);
         }
     }
     
-    /**
-     * Restore from backup
-     */
+    
+
+
     public void restoreFromBackup(int backupIndex) {
         if (backupIndex < 0 || backupIndex >= backups.size()) {
             throw new IllegalArgumentException("Invalid backup index: " + backupIndex);
@@ -545,48 +545,48 @@ public class ConfigurationManager {
         }
     }
     
-    /**
-     * Reload configuration
-     */
+    
+
+
     public void reloadConfiguration() {
         stats.recordReload();
         
-        // In a real implementation, this would reload from all configured sources
-        // For now, we just clear the cache
+        
+        
         configCache.clear();
     }
     
-    /**
-     * Clear cache
-     */
+    
+
+
     public void clearCache() {
         configCache.clear();
     }
     
-    /**
-     * Get statistics
-     */
+    
+
+
     public ConfigStats getStats() {
         return stats;
     }
     
-    /**
-     * Get configuration
-     */
+    
+
+
     public ConfigManagerConfig getConfig() {
         return config;
     }
     
-    /**
-     * Get backup count
-     */
+    
+
+
     public int getBackupCount() {
         return backups.size();
     }
     
-    /**
-     * Shutdown configuration manager
-     */
+    
+
+
     public void shutdown() {
         shutdown = true;
         

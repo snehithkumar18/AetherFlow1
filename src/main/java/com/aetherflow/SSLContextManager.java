@@ -9,14 +9,14 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * SSL/TLS context manager for AetherFlow.
- * Manages SSL contexts, certificate validation, and secure communication.
- * Supports multiple SSL protocols, cipher suites, and certificate management.
- */
+
+
+
+
+
 public class SSLContextManager {
     
-    // SSL protocol versions
+    
     public enum SSLProtocol {
         TLSv1_2("TLSv1.2"),
         TLSv1_3("TLSv1.3");
@@ -32,7 +32,7 @@ public class SSLContextManager {
         }
     }
     
-    // SSL configuration
+    
     public static class SSLConfig {
         public SSLProtocol protocol;
         public String[] enabledCipherSuites;
@@ -50,11 +50,11 @@ public class SSLContextManager {
         
         public SSLConfig() {
             this.protocol = SSLProtocol.TLSv1_3;
-            this.enabledCipherSuites = null; // Use JVM defaults
-            this.enabledProtocols = null; // Use JVM defaults
+            this.enabledCipherSuites = null; 
+            this.enabledProtocols = null; 
             this.clientAuth = false;
             this.hostnameVerification = true;
-            this.sessionTimeout = 300; // 5 minutes
+            this.sessionTimeout = 300; 
             this.sessionCacheSize = 1000;
             this.enableSessionResumption = true;
             this.trustStorePath = null;
@@ -65,7 +65,7 @@ public class SSLContextManager {
         }
     }
     
-    // SSL session info
+    
     public static class SSLSessionInfo {
         public final String sessionId;
         public final long creationTime;
@@ -81,7 +81,7 @@ public class SSLContextManager {
             this.sessionId = sessionId;
             this.creationTime = session.getCreationTime();
             this.lastAccessedTime = session.getLastAccessedTime();
-            this.timeout = 300; // Default 5 minutes
+            this.timeout = 300; 
             this.protocol = session.getProtocol();
             this.cipherSuite = session.getCipherSuite();
             this.peerHost = peerHost;
@@ -94,7 +94,7 @@ public class SSLContextManager {
         }
     }
     
-    // SSL statistics
+    
     public static class SSLStats {
         public final AtomicLong totalHandshakes;
         public final AtomicLong successfulHandshakes;
@@ -117,32 +117,32 @@ public class SSLContextManager {
         }
     }
     
-    // SSL context cache
+    
     private final Map<String, SSLContext> contextCache;
     private final Map<String, SSLSessionInfo> sessionCache;
     
-    // SSL configuration
+    
     private final SSLConfig config;
     
-    // Statistics
+    
     private final SSLStats stats;
     
-    // Lock for thread safety
+    
     private final ReentrantLock contextLock;
     private final ReentrantLock sessionLock;
     
-    // Scheduled executor for cleanup
+    
     private final ScheduledExecutorService cleanupExecutor;
     
-    // Trust manager
+    
     private volatile X509TrustManager trustManager;
     
-    // Key manager
+    
     private volatile X509KeyManager keyManager;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public SSLContextManager(SSLConfig config) {
         this.config = config;
         this.contextCache = new ConcurrentHashMap<>();
@@ -152,26 +152,26 @@ public class SSLContextManager {
         this.sessionLock = new ReentrantLock();
         this.cleanupExecutor = Executors.newSingleThreadScheduledExecutor();
         
-        // Initialize trust and key managers
+        
         initializeManagers();
         
-        // Start cleanup thread
+        
         startCleanupThread();
     }
     
-    /**
-     * Default constructor
-     */
+    
+
+
     public SSLContextManager() {
         this(new SSLConfig());
     }
     
-    /**
-     * Initialize trust and key managers
-     */
+    
+
+
     private void initializeManagers() {
         try {
-            // Initialize trust manager
+            
             TrustManagerFactory trustManagerFactory;
             if (config.trustStorePath != null) {
                 KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
@@ -197,7 +197,7 @@ public class SSLContextManager {
                 }
             }
             
-            // Initialize key manager
+            
             if (config.keyStorePath != null) {
                 KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
                 try (InputStream keyStoreStream = new FileInputStream(config.keyStorePath)) {
@@ -225,18 +225,18 @@ public class SSLContextManager {
         }
     }
     
-    /**
-     * Start cleanup thread
-     */
+    
+
+
     private void startCleanupThread() {
         cleanupExecutor.scheduleAtFixedRate(() -> {
             cleanupExpiredSessions();
         }, 60000, 60000, TimeUnit.MILLISECONDS);
     }
     
-    /**
-     * Get SSL context for given host and port
-     */
+    
+
+
     public SSLContext getSSLContext(String host, int port) throws SSLException {
         String contextKey = host + ":" + port;
         
@@ -247,13 +247,13 @@ public class SSLContextManager {
         
         contextLock.lock();
         try {
-            // Double-check after acquiring lock
+            
             context = contextCache.get(contextKey);
             if (context != null) {
                 return context;
             }
             
-            // Create new SSL context
+            
             context = createSSLContext(host, port);
             contextCache.put(contextKey, context);
             
@@ -263,14 +263,14 @@ public class SSLContextManager {
         }
     }
     
-    /**
-     * Create SSL context
-     */
+    
+
+
     private SSLContext createSSLContext(String host, int port) throws SSLException {
         try {
             SSLContext context = SSLContext.getInstance(config.protocol.getProtocolName());
             
-            // Create custom trust manager if hostname verification is enabled
+            
             TrustManager[] trustManagers;
             if (config.hostnameVerification && trustManager != null) {
                 trustManagers = new TrustManager[] {
@@ -280,13 +280,13 @@ public class SSLContextManager {
                 trustManagers = new TrustManager[] { trustManager };
             }
             
-            // Create key manager array
+            
             KeyManager[] keyManagers = keyManager != null ? 
                 new KeyManager[] { keyManager } : null;
             
             context.init(keyManagers, trustManagers, new SecureRandom());
             
-            // Configure SSL parameters
+            
             SSLParameters sslParams = context.getDefaultSSLParameters();
             if (config.enabledCipherSuites != null) {
                 sslParams.setCipherSuites(config.enabledCipherSuites);
@@ -304,15 +304,15 @@ public class SSLContextManager {
         }
     }
     
-    /**
-     * Create SSL engine
-     */
+    
+
+
     public SSLEngine createSSLEngine(String host, int port) throws SSLException {
         SSLContext context = getSSLContext(host, port);
         SSLEngine engine = context.createSSLEngine(host, port);
         engine.setUseClientMode(true);
         
-        // Configure engine
+        
         SSLParameters sslParams = engine.getSSLParameters();
         if (config.enabledCipherSuites != null) {
             sslParams.setCipherSuites(config.enabledCipherSuites);
@@ -328,9 +328,9 @@ public class SSLContextManager {
         return engine;
     }
     
-    /**
-     * Record SSL session
-     */
+    
+
+
     public void recordSession(SSLEngine engine, String host, int port) {
         if (!config.enableSessionResumption) {
             return;
@@ -345,7 +345,7 @@ public class SSLContextManager {
             sessionCache.put(sessionId, sessionInfo);
             stats.activeSessions.incrementAndGet();
             
-            // Check if this is a resumed session
+            
             if (session.isValid()) {
                 stats.sessionResumptions.incrementAndGet();
             } else {
@@ -356,9 +356,9 @@ public class SSLContextManager {
         }
     }
     
-    /**
-     * Get SSL session info
-     */
+    
+
+
     public SSLSessionInfo getSessionInfo(String sessionId) {
         sessionLock.lock();
         try {
@@ -368,9 +368,9 @@ public class SSLContextManager {
         }
     }
     
-    /**
-     * Cleanup expired sessions
-     */
+    
+
+
     private void cleanupExpiredSessions() {
         sessionLock.lock();
         try {
@@ -389,58 +389,58 @@ public class SSLContextManager {
         }
     }
     
-    /**
-     * Record handshake start
-     */
+    
+
+
     public void recordHandshakeStart() {
         stats.totalHandshakes.incrementAndGet();
     }
     
-    /**
-     * Record handshake success
-     */
+    
+
+
     public void recordHandshakeSuccess() {
         stats.successfulHandshakes.incrementAndGet();
     }
     
-    /**
-     * Record handshake failure
-     */
+    
+
+
     public void recordHandshakeFailure() {
         stats.failedHandshakes.incrementAndGet();
     }
     
-    /**
-     * Record certificate error
-     */
+    
+
+
     public void recordCertificateError() {
         stats.certificateErrors.incrementAndGet();
     }
     
-    /**
-     * Record verification error
-     */
+    
+
+
     public void recordVerificationError() {
         stats.verificationErrors.incrementAndGet();
     }
     
-    /**
-     * Get statistics
-     */
+    
+
+
     public SSLStats getStats() {
         return stats;
     }
     
-    /**
-     * Get configuration
-     */
+    
+
+
     public SSLConfig getConfig() {
         return config;
     }
     
-    /**
-     * Clear context cache
-     */
+    
+
+
     public void clearContextCache() {
         contextLock.lock();
         try {
@@ -450,9 +450,9 @@ public class SSLContextManager {
         }
     }
     
-    /**
-     * Clear session cache
-     */
+    
+
+
     public void clearSessionCache() {
         sessionLock.lock();
         try {
@@ -463,9 +463,9 @@ public class SSLContextManager {
         }
     }
     
-    /**
-     * Shutdown manager
-     */
+    
+
+
     public void shutdown() {
         cleanupExecutor.shutdown();
         try {
@@ -478,9 +478,9 @@ public class SSLContextManager {
         clearSessionCache();
     }
     
-    /**
-     * Convert bytes to hex string
-     */
+    
+
+
     private static String bytesToHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
         for (byte b : bytes) {
@@ -489,9 +489,9 @@ public class SSLContextManager {
         return sb.toString();
     }
     
-    /**
-     * Hostname verifying trust manager
-     */
+    
+
+
     private static class HostnameVerifyingTrustManager implements X509TrustManager {
         private final X509TrustManager delegate;
         private final String expectedHostname;
@@ -512,7 +512,7 @@ public class SSLContextManager {
             throws CertificateException {
             delegate.checkServerTrusted(chain, authType);
             
-            // Verify hostname
+            
             if (expectedHostname != null && chain.length > 0) {
                 try {
                     verifyHostname(chain[0], expectedHostname);
@@ -527,9 +527,9 @@ public class SSLContextManager {
             return delegate.getAcceptedIssuers();
         }
         
-        /**
-         * Verify hostname
-         */
+        
+
+
         private void verifyHostname(X509Certificate cert, String hostname) 
             throws CertificateException {
             String cn = getCommonName(cert);
@@ -545,9 +545,9 @@ public class SSLContextManager {
             throw new CertificateException("Hostname verification failed");
         }
         
-        /**
-         * Get common name from certificate
-         */
+        
+
+
         private String getCommonName(X509Certificate cert) throws CertificateException {
             String dn = cert.getSubjectX500Principal().getName();
             String[] parts = dn.split(",");

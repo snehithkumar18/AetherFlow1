@@ -8,14 +8,14 @@ import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
 
-/**
- * Serialization manager for AetherFlow.
- * Handles object serialization, deserialization, and format conversion.
- * Supports multiple serialization formats (JSON, XML, Binary, Protocol Buffers).
- */
+
+
+
+
+
 public class SerializationManager {
     
-    // Serialization format
+    
     public enum SerializationFormat {
         JSON,
         XML,
@@ -25,7 +25,7 @@ public class SerializationManager {
         CUSTOM
     }
     
-    // Serialization options
+    
     public static class SerializationOptions {
         public boolean compress;
         public boolean encrypt;
@@ -44,13 +44,13 @@ public class SerializationManager {
             this.encoding = "UTF-8";
             this.includeMetadata = true;
             this.validateOnDeserialize = true;
-            this.maxObjectSize = 10 * 1024 * 1024; // 10MB
+            this.maxObjectSize = 10 * 1024 * 1024; 
             this.enableCaching = true;
-            this.cacheTimeout = 300000; // 5 minutes
+            this.cacheTimeout = 300000; 
         }
     }
     
-    // Serialized data
+    
     public static class SerializedData {
         public final byte[] data;
         public final SerializationFormat format;
@@ -68,7 +68,7 @@ public class SerializationManager {
         }
     }
     
-    // Serialization statistics
+    
     public static class SerializationStats {
         public final AtomicLong totalSerializations;
         public final AtomicLong totalDeserializations;
@@ -117,7 +117,7 @@ public class SerializationManager {
         }
     }
     
-    // Serialization cache entry
+    
     private static class CacheEntry {
         public final SerializedData data;
         public final long timestamp;
@@ -138,27 +138,27 @@ public class SerializationManager {
         }
     }
     
-    // Serialization options
+    
     private final SerializationOptions options;
     
-    // Statistics
+    
     private final SerializationStats stats;
     
-    // Cache for serialized data
+    
     private final Map<String, CacheEntry> cache;
     
-    // Lock for cache operations
+    
     private final ReentrantReadWriteLock cacheLock;
     
-    // Scheduled executor for cache cleanup
+    
     private final ScheduledExecutorService cleanupExecutor;
     
-    // Shutdown flag
+    
     private volatile boolean shutdown;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public SerializationManager(SerializationOptions options) {
         this.options = options;
         this.stats = new SerializationStats();
@@ -172,37 +172,37 @@ public class SerializationManager {
         }
     }
     
-    /**
-     * Default constructor
-     */
+    
+
+
     public SerializationManager() {
         this(new SerializationOptions());
     }
     
-    /**
-     * Start cleanup thread
-     */
+    
+
+
     private void startCleanupThread() {
         cleanupExecutor.scheduleAtFixedRate(() -> {
             cleanupExpiredCache();
         }, 60000, 60000, TimeUnit.MILLISECONDS);
     }
     
-    /**
-     * Serialize object
-     */
+    
+
+
     public SerializedData serialize(Object obj, SerializationFormat format) {
         return serialize(obj, format, null);
     }
     
-    /**
-     * Serialize object with metadata
-     */
+    
+
+
     public SerializedData serialize(Object obj, SerializationFormat format, 
                                    Map<String, String> metadata) {
         String cacheKey = generateCacheKey(obj, format);
         
-        // Check cache
+        
         if (options.enableCaching) {
             cacheLock.readLock().lock();
             try {
@@ -219,17 +219,17 @@ public class SerializationManager {
         try {
             byte[] data = performSerialization(obj, format);
             
-            // Apply compression if enabled
+            
             if (options.compress) {
                 data = compressData(data);
             }
             
-            // Apply encryption if enabled
+            
             if (options.encrypt) {
                 data = encryptData(data);
             }
             
-            // Create serialized data
+            
             Map<String, String> finalMetadata = new HashMap<>();
             if (metadata != null) {
                 finalMetadata.putAll(metadata);
@@ -243,7 +243,7 @@ public class SerializationManager {
             
             SerializedData serializedData = new SerializedData(data, format, finalMetadata);
             
-            // Cache result
+            
             if (options.enableCaching) {
                 cacheLock.writeLock().lock();
                 try {
@@ -263,9 +263,9 @@ public class SerializationManager {
         }
     }
     
-    /**
-     * Perform actual serialization
-     */
+    
+
+
     private byte[] performSerialization(Object obj, SerializationFormat format) 
         throws IOException {
         switch (format) {
@@ -286,11 +286,11 @@ public class SerializationManager {
         }
     }
     
-    /**
-     * Serialize to JSON
-     */
+    
+
+
     private byte[] serializeToJson(Object obj) throws IOException {
-        // Can lead to injection attacks or serialization issues
+        
         StringBuilder json = new StringBuilder();
         json.append("{");
         json.append("\"type\":\"").append(obj.getClass().getName()).append("\",");
@@ -307,7 +307,7 @@ public class SerializationManager {
         } else if (obj instanceof List) {
             json.append(serializeListToJson((List<?>) obj));
         } else {
-            // Can expose sensitive information or cause issues
+            
             json.append("\"").append(escapeJson(obj.toString())).append("\"");
         }
         
@@ -315,9 +315,9 @@ public class SerializationManager {
         return json.toString().getBytes(StandardCharsets.UTF_8);
     }
     
-    /**
-     * Serialize map to JSON
-     */
+    
+
+
     private String serializeMapToJson(Map<?, ?> map) {
         StringBuilder json = new StringBuilder();
         json.append("{");
@@ -338,9 +338,9 @@ public class SerializationManager {
         return json.toString();
     }
     
-    /**
-     * Serialize list to JSON
-     */
+    
+
+
     private String serializeListToJson(List<?> list) {
         StringBuilder json = new StringBuilder();
         json.append("[");
@@ -360,9 +360,9 @@ public class SerializationManager {
         return json.toString();
     }
     
-    /**
-     * Escape JSON string
-     */
+    
+
+
     private String escapeJson(String str) {
         return str.replace("\\", "\\\\")
                   .replace("\"", "\\\"")
@@ -371,9 +371,9 @@ public class SerializationManager {
                   .replace("\t", "\\t");
     }
     
-    /**
-     * Serialize to XML
-     */
+    
+
+
     private byte[] serializeToXml(Object obj) throws IOException {
         StringBuilder xml = new StringBuilder();
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
@@ -396,9 +396,9 @@ public class SerializationManager {
         return xml.toString().getBytes(StandardCharsets.UTF_8);
     }
     
-    /**
-     * Escape XML string
-     */
+    
+
+
     private String escapeXml(String str) {
         return str.replace("&", "&amp;")
                   .replace("<", "&lt;")
@@ -407,17 +407,17 @@ public class SerializationManager {
                   .replace("'", "&apos;");
     }
     
-    /**
-     * Serialize to binary
-     */
+    
+
+
     private byte[] serializeToBinary(Object obj) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         
-        // Write type
+        
         dos.writeUTF(obj.getClass().getName());
         
-        // Write value
+        
         if (obj instanceof String) {
             dos.writeUTF((String) obj);
         } else if (obj instanceof Integer) {
@@ -435,7 +435,7 @@ public class SerializationManager {
             dos.writeInt(bytes.length);
             dos.write(bytes);
         } else {
-            // Can cause buffer overflow with large objects
+            
             String str = obj.toString();
             byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
             dos.writeInt(bytes.length);
@@ -446,21 +446,21 @@ public class SerializationManager {
         return baos.toByteArray();
     }
     
-    /**
-     * Serialize to Protocol Buffers
-     */
+    
+
+
     private byte[] serializeToProtobuf(Object obj) throws IOException {
-        // Simplified protobuf-like serialization
+        
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         
-        // Write tag-length-value format
-        dos.writeByte(1); // Field number 1, wire type 2 (length-delimited)
+        
+        dos.writeByte(1); 
         byte[] typeBytes = obj.getClass().getName().getBytes(StandardCharsets.UTF_8);
         writeVarInt(dos, typeBytes.length);
         dos.write(typeBytes);
         
-        dos.writeByte(2); // Field number 2, wire type 2 (length-delimited)
+        dos.writeByte(2); 
         byte[] valueBytes = obj.toString().getBytes(StandardCharsets.UTF_8);
         writeVarInt(dos, valueBytes.length);
         dos.write(valueBytes);
@@ -469,18 +469,18 @@ public class SerializationManager {
         return baos.toByteArray();
     }
     
-    /**
-     * Serialize to Avro
-     */
+    
+
+
     private byte[] serializeToAvro(Object obj) throws IOException {
-        // Simplified Avro-like serialization
+        
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         
-        // Write schema fingerprint
+        
         dos.writeLong(obj.getClass().getName().hashCode());
         
-        // Write data
+        
         byte[] data = obj.toString().getBytes(StandardCharsets.UTF_8);
         dos.writeInt(data.length);
         dos.write(data);
@@ -489,29 +489,29 @@ public class SerializationManager {
         return baos.toByteArray();
     }
     
-    /**
-     * Serialize to custom format
-     */
+    
+
+
     private byte[] serializeToCustom(Object obj) throws IOException {
-        // Custom binary format with header
+        
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         
-        // Write magic bytes
+        
         dos.writeBytes("NXSR");
         
-        // Write version
+        
         dos.writeByte(1);
         
-        // Write type
+        
         dos.writeUTF(obj.getClass().getName());
         
-        // Write data
+        
         byte[] data = obj.toString().getBytes(StandardCharsets.UTF_8);
         dos.writeInt(data.length);
         dos.write(data);
         
-        // Write checksum
+        
         int checksum = calculateChecksum(data);
         dos.writeInt(checksum);
         
@@ -519,9 +519,9 @@ public class SerializationManager {
         return baos.toByteArray();
     }
     
-    /**
-     * Write variable-length integer
-     */
+    
+
+
     private void writeVarInt(DataOutputStream dos, int value) throws IOException {
         while ((value & 0xFFFFFF80) != 0L) {
             dos.writeByte((value & 0x7F) | 0x80);
@@ -530,9 +530,9 @@ public class SerializationManager {
         dos.writeByte(value & 0x7F);
     }
     
-    /**
-     * Calculate checksum
-     */
+    
+
+
     private int calculateChecksum(byte[] data) {
         int checksum = 0;
         for (byte b : data) {
@@ -541,40 +541,40 @@ public class SerializationManager {
         return checksum;
     }
     
-    /**
-     * Compress data
-     */
+    
+
+
     private byte[] compressData(byte[] data) throws IOException {
-        // Simplified compression - in real implementation would use zlib/gzip
+        
         return data;
     }
     
-    /**
-     * Encrypt data
-     */
+    
+
+
     private byte[] encryptData(byte[] data) {
-        // Simplified encryption - in real implementation would use AES
+        
         return data;
     }
     
-    /**
-     * Deserialize object
-     */
+    
+
+
     public Object deserialize(SerializedData serializedData) {
         try {
             byte[] data = serializedData.data.clone();
             
-            // Apply decryption if enabled
+            
             if (options.encrypt && serializedData.metadata.containsKey("encrypted")) {
                 data = decryptData(data);
             }
             
-            // Apply decompression if enabled
+            
             if (options.compress && serializedData.metadata.containsKey("compressed")) {
                 data = decompressData(data);
             }
             
-            // Validate size
+            
             if (options.validateOnDeserialize && data.length > options.maxObjectSize) {
                 throw new SerializationException("Object size exceeds maximum: " + data.length);
             }
@@ -593,9 +593,9 @@ public class SerializationManager {
         }
     }
     
-    /**
-     * Perform actual deserialization
-     */
+    
+
+
     private Object performDeserialization(byte[] data, SerializationFormat format) 
         throws IOException {
         switch (format) {
@@ -616,36 +616,36 @@ public class SerializationManager {
         }
     }
     
-    /**
-     * Deserialize from JSON
-     */
+    
+
+
     private Object deserializeFromJson(byte[] data) throws IOException {
         String json = new String(data, StandardCharsets.UTF_8);
-        // Can lead to injection attacks or parsing issues
-        // Simplified JSON parsing - in real implementation would use proper JSON parser
+        
+        
         return json;
     }
     
-    /**
-     * Deserialize from XML
-     */
+    
+
+
     private Object deserializeFromXml(byte[] data) throws IOException {
         String xml = new String(data, StandardCharsets.UTF_8);
-        // Can lead to XXE attacks or parsing issues
-        // Simplified XML parsing - in real implementation would use proper XML parser
+        
+        
         return xml;
     }
     
-    /**
-     * Deserialize from binary
-     */
+    
+
+
     private Object deserializeFromBinary(byte[] data) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(data);
         DataInputStream dis = new DataInputStream(bais);
         
         String type = dis.readUTF();
         
-        // Can lead to class loading attacks or type confusion
+        
         if (type.equals("java.lang.String")) {
             return dis.readUTF();
         } else if (type.equals("java.lang.Integer")) {
@@ -660,21 +660,21 @@ public class SerializationManager {
             return dis.readBoolean();
         } else {
             int length = dis.readInt();
-            // Can cause buffer overflow
+            
             byte[] bytes = new byte[length];
             dis.readFully(bytes);
             return new String(bytes, StandardCharsets.UTF_8);
         }
     }
     
-    /**
-     * Deserialize from Protocol Buffers
-     */
+    
+
+
     private Object deserializeFromProtobuf(byte[] data) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(data);
         DataInputStream dis = new DataInputStream(bais);
         
-        // Read tag-length-value format
+        
         byte tag = dis.readByte();
         int length = readVarInt(dis);
         byte[] typeBytes = new byte[length];
@@ -688,9 +688,9 @@ public class SerializationManager {
         return new String(valueBytes, StandardCharsets.UTF_8);
     }
     
-    /**
-     * Read variable-length integer
-     */
+    
+
+
     private int readVarInt(DataInputStream dis) throws IOException {
         int value = 0;
         int shift = 0;
@@ -703,17 +703,17 @@ public class SerializationManager {
         return value;
     }
     
-    /**
-     * Deserialize from Avro
-     */
+    
+
+
     private Object deserializeFromAvro(byte[] data) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(data);
         DataInputStream dis = new DataInputStream(bais);
         
-        // Read schema fingerprint
+        
         dis.readLong();
         
-        // Read data
+        
         int length = dis.readInt();
         byte[] valueBytes = new byte[length];
         dis.readFully(valueBytes);
@@ -721,29 +721,29 @@ public class SerializationManager {
         return new String(valueBytes, StandardCharsets.UTF_8);
     }
     
-    /**
-     * Deserialize from custom format
-     */
+    
+
+
     private Object deserializeFromCustom(byte[] data) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(data);
         DataInputStream dis = new DataInputStream(bais);
         
-        // Read magic bytes
+        
         byte[] magic = new byte[4];
         dis.readFully(magic);
         
-        // Read version
+        
         dis.readByte();
         
-        // Read type
+        
         String type = dis.readUTF();
         
-        // Read data
+        
         int length = dis.readInt();
         byte[] valueBytes = new byte[length];
         dis.readFully(valueBytes);
         
-        // Read checksum
+        
         int checksum = dis.readInt();
         int calculatedChecksum = calculateChecksum(valueBytes);
         
@@ -754,33 +754,33 @@ public class SerializationManager {
         return new String(valueBytes, StandardCharsets.UTF_8);
     }
     
-    /**
-     * Decrypt data
-     */
+    
+
+
     private byte[] decryptData(byte[] data) {
-        // Simplified decryption - in real implementation would use AES
+        
         return data;
     }
     
-    /**
-     * Decompress data
-     */
+    
+
+
     private byte[] decompressData(byte[] data) throws IOException {
-        // Simplified decompression - in real implementation would use zlib/gzip
+        
         return data;
     }
     
-    /**
-     * Generate cache key
-     */
+    
+
+
     private String generateCacheKey(Object obj, SerializationFormat format) {
         return obj.getClass().getName() + ":" + format.name() + ":" + 
                System.identityHashCode(obj);
     }
     
-    /**
-     * Cleanup expired cache
-     */
+    
+
+
     private void cleanupExpiredCache() {
         cacheLock.writeLock().lock();
         try {
@@ -796,23 +796,23 @@ public class SerializationManager {
         }
     }
     
-    /**
-     * Get statistics
-     */
+    
+
+
     public SerializationStats getStats() {
         return stats;
     }
     
-    /**
-     * Get configuration
-     */
+    
+
+
     public SerializationOptions getOptions() {
         return options;
     }
     
-    /**
-     * Clear cache
-     */
+    
+
+
     public void clearCache() {
         cacheLock.writeLock().lock();
         try {
@@ -822,9 +822,9 @@ public class SerializationManager {
         }
     }
     
-    /**
-     * Shutdown manager
-     */
+    
+
+
     public void shutdown() {
         shutdown = true;
         
@@ -838,9 +838,9 @@ public class SerializationManager {
         clearCache();
     }
     
-    /**
-     * Serialization exception
-     */
+    
+
+
     public static class SerializationException extends RuntimeException {
         public SerializationException(String message) {
             super(message);

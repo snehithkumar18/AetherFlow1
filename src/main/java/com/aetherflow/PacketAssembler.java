@@ -12,13 +12,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * Packet assembler for fragmentation, reassembly, reordering, and deduplication.
- * Handles complex packet reassembly with sophisticated buffer management.
- */
+
+
+
+
 public class PacketAssembler {
     
-    // Fragment information
+    
     public static class Fragment {
         public final int sequenceNumber;
         public final int fragmentIndex;
@@ -44,7 +44,7 @@ public class PacketAssembler {
         }
     }
     
-    // Reassembly context for a sequence
+    
     public static class ReassemblyContext {
         public final int sequenceNumber;
         public final int totalFragments;
@@ -104,35 +104,35 @@ public class PacketAssembler {
         }
     }
     
-    // Configuration
+    
     private static final int MAX_REASSEMBLY_CONTEXTS = 10000;
-    private static final int MAX_FRAGMENT_SIZE = 64 * 1024; // 64KB per fragment
-    private static final int MAX_TOTAL_SIZE = 16 * 1024 * 1024; // 16MB total
-    private static final long REASSEMBLY_TIMEOUT_MS = 60000; // 60 seconds
+    private static final int MAX_FRAGMENT_SIZE = 64 * 1024; 
+    private static final int MAX_TOTAL_SIZE = 16 * 1024 * 1024; 
+    private static final long REASSEMBLY_TIMEOUT_MS = 60000; 
     private static final int MAX_FRAGMENTS_PER_PACKET = 1000;
     
-    // Reassembly contexts by sequence number
+    
     private final Map<Integer, ReassemblyContext> reassemblyContexts;
     
-    // Lock for reassembly operations
+    
     private final ReentrantLock reassemblyLock;
     
-    // Statistics
+    
     private final AtomicInteger totalPacketsAssembled;
     private final AtomicInteger totalFragmentsReceived;
     private final AtomicInteger totalFragmentsDropped;
     private final AtomicInteger totalReassemblyTimeouts;
     private final AtomicInteger totalReassemblyErrors;
     
-    // Duplicate detection
+    
     private final Map<Integer, Map<Integer, Long>> fragmentReceiptMap;
     
-    // Buffer pool for assembled data
+    
     private final BufferPool bufferPool;
     
-    /**
-     * Constructor
-     */
+    
+
+
     public PacketAssembler() {
         this.reassemblyContexts = new ConcurrentHashMap<>();
         this.reassemblyLock = new ReentrantLock();
@@ -145,22 +145,22 @@ public class PacketAssembler {
         this.bufferPool = new BufferPool();
     }
     
-    /**
-     * Add a fragment to the reassembly context
-     */
+    
+
+
     public AssemblerResult addFragment(Fragment fragment) {
         if (fragment == null) {
             return new AssemblerResult(false, null, "Fragment is null");
         }
         
-        // Validate fragment
+        
         String validationError = validateFragment(fragment);
         if (validationError != null) {
             totalFragmentsDropped.incrementAndGet();
             return new AssemblerResult(false, null, validationError);
         }
         
-        // Check for duplicate
+        
         if (isDuplicateFragment(fragment)) {
             totalFragmentsDropped.incrementAndGet();
             return new AssemblerResult(false, null, "Duplicate fragment");
@@ -170,11 +170,11 @@ public class PacketAssembler {
         
         reassemblyLock.lock();
         try {
-            // Get or create reassembly context
+            
             ReassemblyContext context = reassemblyContexts.get(fragment.sequenceNumber);
             
             if (context == null) {
-                // Create new context
+                
                 context = new ReassemblyContext(
                     fragment.sequenceNumber,
                     fragment.totalFragments,
@@ -183,20 +183,20 @@ public class PacketAssembler {
                 reassemblyContexts.put(fragment.sequenceNumber, context);
             }
             
-            // Validate fragment matches context
+            
             if (context.totalFragments != fragment.totalFragments || 
                 context.totalSize != fragment.totalSize) {
                 totalFragmentsDropped.incrementAndGet();
                 return new AssemblerResult(false, null, "Fragment does not match reassembly context");
             }
             
-            // Add fragment to context
+            
             context.addFragment(fragment);
             
-            // Record fragment receipt for duplicate detection
+            
             recordFragmentReceipt(fragment);
             
-            // Check if reassembly is complete
+            
             if (context.isComplete()) {
                 byte[] assembledData = assemblePacket(context);
                 if (assembledData != null) {
@@ -204,7 +204,7 @@ public class PacketAssembler {
                     context.complete = true;
                     totalPacketsAssembled.incrementAndGet();
                     
-                    // Remove context from active map
+                    
                     reassemblyContexts.remove(fragment.sequenceNumber);
                     
                     return new AssemblerResult(true, assembledData, null);
@@ -222,9 +222,9 @@ public class PacketAssembler {
         }
     }
     
-    /**
-     * Validate a fragment
-     */
+    
+
+
     private String validateFragment(Fragment fragment) {
         if (fragment.fragmentIndex < 0) {
             return "Invalid fragment index";
@@ -258,7 +258,7 @@ public class PacketAssembler {
             return "Fragment data exceeds maximum size";
         }
         
-        // The check uses long but the actual assembly uses int, causing overflow
+        
         long endOffset = (long) fragment.fragmentOffset + fragment.data.length;
         if (endOffset > fragment.totalSize) {
             return "Fragment data exceeds total size";
@@ -271,9 +271,9 @@ public class PacketAssembler {
         return null;
     }
     
-    /**
-     * Check if fragment is a duplicate
-     */
+    
+
+
     private boolean isDuplicateFragment(Fragment fragment) {
         Map<Integer, Long> receiptMap = fragmentReceiptMap.get(fragment.sequenceNumber);
         if (receiptMap == null) {
@@ -283,13 +283,13 @@ public class PacketAssembler {
         if (receiptTime == null) {
             return false;
         }
-        // Consider duplicate if received within 1 second
+        
         return (System.currentTimeMillis() - receiptTime) < 1000;
     }
     
-    /**
-     * Record fragment receipt for duplicate detection
-     */
+    
+
+
     private void recordFragmentReceipt(Fragment fragment) {
         Map<Integer, Long> receiptMap = fragmentReceiptMap.computeIfAbsent(
             fragment.sequenceNumber, 
@@ -297,7 +297,7 @@ public class PacketAssembler {
         );
         receiptMap.put(fragment.fragmentIndex, System.currentTimeMillis());
         
-        // Clean up old receipt records
+        
         if (receiptMap.size() > MAX_FRAGMENTS_PER_PACKET * 2) {
             receiptMap.entrySet().removeIf(entry -> 
                 (System.currentTimeMillis() - entry.getValue()) > 5000
@@ -305,19 +305,19 @@ public class PacketAssembler {
         }
     }
     
-    /**
-     * Assemble packet from fragments
-     */
+    
+
+
     private byte[] assemblePacket(ReassemblyContext context) {
         if (context == null || !context.isComplete()) {
             return null;
         }
         
         try {
-            // Allocate buffer
+            
             byte[] assembledData = new byte[context.totalSize];
             
-            // Copy fragments into buffer
+            
             for (Fragment fragment : context.fragments.values()) {
                 long endOffset = (long) fragment.fragmentOffset + fragment.data.length;
                 if (endOffset > context.totalSize) {
@@ -341,9 +341,9 @@ public class PacketAssembler {
         }
     }
     
-    /**
-     * Fragment a packet into multiple fragments
-     */
+    
+
+
     public List<Fragment> fragmentPacket(int sequenceNumber, byte[] data, int fragmentSize) {
         if (data == null || data.length == 0) {
             return new ArrayList<>();
@@ -357,7 +357,7 @@ public class PacketAssembler {
         int totalFragments = (totalSize + fragmentSize - 1) / fragmentSize;
         
         if (totalFragments > MAX_FRAGMENTS_PER_PACKET) {
-            // Adjust fragment size to stay within limits
+            
             fragmentSize = (totalSize + MAX_FRAGMENTS_PER_PACKET - 1) / MAX_FRAGMENTS_PER_PACKET;
             totalFragments = (totalSize + fragmentSize - 1) / fragmentSize;
         }
@@ -386,24 +386,24 @@ public class PacketAssembler {
         return fragments;
     }
     
-    /**
-     * Get reassembly context for a sequence number
-     */
+    
+
+
     public ReassemblyContext getContext(int sequenceNumber) {
         return reassemblyContexts.get(sequenceNumber);
     }
     
-    /**
-     * Remove reassembly context
-     */
+    
+
+
     public void removeContext(int sequenceNumber) {
         reassemblyContexts.remove(sequenceNumber);
         fragmentReceiptMap.remove(sequenceNumber);
     }
     
-    /**
-     * Clean up expired reassembly contexts
-     */
+    
+
+
     public int cleanupExpiredContexts() {
         int cleaned = 0;
         long now = System.currentTimeMillis();
@@ -427,7 +427,7 @@ public class PacketAssembler {
                 totalReassemblyTimeouts.incrementAndGet();
             }
             
-            // Also limit total number of contexts
+            
             if (reassemblyContexts.size() > MAX_REASSEMBLY_CONTEXTS) {
                 List<Map.Entry<Integer, ReassemblyContext>> entries = new ArrayList<>(reassemblyContexts.entrySet());
                 entries.sort(Comparator.comparingLong(e -> e.getValue().lastUpdateTime));
@@ -448,9 +448,9 @@ public class PacketAssembler {
         return cleaned;
     }
     
-    /**
-     * Get statistics
-     */
+    
+
+
     public AssemblerStats getStats() {
         return new AssemblerStats(
             totalPacketsAssembled.get(),
@@ -462,9 +462,9 @@ public class PacketAssembler {
         );
     }
     
-    /**
-     * Reset statistics
-     */
+    
+
+
     public void resetStats() {
         totalPacketsAssembled.set(0);
         totalFragmentsReceived.set(0);
@@ -473,9 +473,9 @@ public class PacketAssembler {
         totalReassemblyErrors.set(0);
     }
     
-    /**
-     * Assembler result
-     */
+    
+
+
     public static class AssemblerResult {
         public final boolean success;
         public final byte[] data;
@@ -488,9 +488,9 @@ public class PacketAssembler {
         }
     }
     
-    /**
-     * Assembler statistics
-     */
+    
+
+
     public static class AssemblerStats {
         public final int totalPacketsAssembled;
         public final int totalFragmentsReceived;

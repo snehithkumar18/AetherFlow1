@@ -13,13 +13,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * Async message queue with thread-safe processing, backpressure handling,
- * and sophisticated queue management for concurrent message processing.
- */
+
+
+
+
 public class AsyncMessageQueue<T> {
     
-    // Message wrapper with metadata
+    
     public static class Message<T> {
         public final T payload;
         public final long enqueueTime;
@@ -80,29 +80,29 @@ public class AsyncMessageQueue<T> {
         }
     }
     
-    // Message processor interface
+    
     public interface MessageProcessor<T> {
         void process(Message<T> message) throws Exception;
     }
     
-    // Queue configuration
+    
     private static final int DEFAULT_QUEUE_CAPACITY = 10000;
     private static final int DEFAULT_THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
-    private static final long DEFAULT_PROCESS_TIMEOUT_MS = 30000; // 30 seconds
+    private static final long DEFAULT_PROCESS_TIMEOUT_MS = 30000; 
     private static final int DEFAULT_MAX_RETRIES = 3;
     
-    // Queue storage
+    
     private final BlockingQueue<Message<T>> messageQueue;
     private final BlockingQueue<Message<T>> priorityQueue;
     private final ConcurrentHashMap<String, Message<T>> inFlightMessages;
     
-    // Thread pool for processing
+    
     private final ThreadPoolExecutor executor;
     
-    // Message processor
+    
     private volatile MessageProcessor<T> processor;
     
-    // Statistics
+    
     private final AtomicLong totalEnqueued;
     private final AtomicLong totalDequeued;
     private final AtomicLong totalProcessed;
@@ -112,34 +112,34 @@ public class AsyncMessageQueue<T> {
     private final AtomicInteger currentQueueSize;
     private final AtomicInteger currentInFlight;
     
-    // Queue state
+    
     private volatile boolean queueEnabled;
     private volatile boolean paused;
     private final AtomicBoolean shutdownRequested;
     
-    // Backpressure configuration
+    
     private volatile int backpressureThreshold;
     private volatile boolean backpressureEnabled;
     
-    // Lock for queue operations
+    
     private final ReentrantLock queueLock;
     
-    // Dead letter queue for failed messages
+    
     private final BlockingQueue<Message<T>> deadLetterQueue;
     
-    /**
-     * Constructor with default configuration
-     */
+    
+
+
     public AsyncMessageQueue() {
         this(DEFAULT_QUEUE_CAPACITY, DEFAULT_THREAD_POOL_SIZE);
     }
     
-    /**
-     * Constructor with custom capacity and thread pool size
-     */
+    
+
+
     public AsyncMessageQueue(int queueCapacity, int threadPoolSize) {
         this.messageQueue = new LinkedBlockingQueue<>(queueCapacity);
-        this.priorityQueue = new LinkedBlockingQueue<>(queueCapacity / 10); // 10% for priority
+        this.priorityQueue = new LinkedBlockingQueue<>(queueCapacity / 10); 
         this.inFlightMessages = new ConcurrentHashMap<>();
         this.executor = new ThreadPoolExecutor(
             threadPoolSize,
@@ -167,30 +167,30 @@ public class AsyncMessageQueue<T> {
         startProcessingThreads();
     }
     
-    /**
-     * Set message processor
-     */
+    
+
+
     public void setProcessor(MessageProcessor<T> processor) {
         this.processor = processor;
     }
     
-    /**
-     * Enqueue a message
-     */
+    
+
+
     public boolean enqueue(T payload) {
         return enqueue(payload, 0, DEFAULT_MAX_RETRIES);
     }
     
-    /**
-     * Enqueue a message with priority and retry configuration
-     */
+    
+
+
     public boolean enqueue(T payload, long priority, int maxRetries) {
         if (!queueEnabled || paused) {
             totalDropped.incrementAndGet();
             return false;
         }
         
-        // Check backpressure
+        
         if (backpressureEnabled && getCurrentQueueSize() >= backpressureThreshold) {
             totalDropped.incrementAndGet();
             return false;
@@ -220,13 +220,13 @@ public class AsyncMessageQueue<T> {
         }
     }
     
-    /**
-     * Dequeue a message for processing
-     */
+    
+
+
     private Message<T> dequeue() {
         queueLock.lock();
         try {
-            // Try priority queue first
+            
             Message<T> message = priorityQueue.poll();
             if (message != null) {
                 message.dequeueTime = System.currentTimeMillis();
@@ -237,7 +237,7 @@ public class AsyncMessageQueue<T> {
                 return message;
             }
             
-            // Try regular queue
+            
             message = messageQueue.poll();
             if (message != null) {
                 message.dequeueTime = System.currentTimeMillis();
@@ -253,9 +253,9 @@ public class AsyncMessageQueue<T> {
         }
     }
     
-    /**
-     * Process a message
-     */
+    
+
+
     private void processMessage(Message<T> message) {
         if (processor == null) {
             markFailed(message, "No processor configured");
@@ -280,9 +280,9 @@ public class AsyncMessageQueue<T> {
         }
     }
     
-    /**
-     * Mark message as processed
-     */
+    
+
+
     private void markProcessed(Message<T> message) {
         message.processEndTime = System.currentTimeMillis();
         message.processed = true;
@@ -293,9 +293,9 @@ public class AsyncMessageQueue<T> {
         totalProcessed.incrementAndGet();
     }
     
-    /**
-     * Mark message as failed
-     */
+    
+
+
     private void markFailed(Message<T> message, String reason) {
         message.processEndTime = System.currentTimeMillis();
         message.processed = false;
@@ -307,9 +307,9 @@ public class AsyncMessageQueue<T> {
         totalFailed.incrementAndGet();
     }
     
-    /**
-     * Requeue a message for retry
-     */
+    
+
+
     private void requeueMessage(Message<T> message) {
         queueLock.lock();
         try {
@@ -323,21 +323,21 @@ public class AsyncMessageQueue<T> {
             queueLock.unlock();
         }
         
-        // The messageQueue is a ConcurrentLinkedQueue which is thread-safe, but the currentQueueSize
-        // counter is not atomically updated with the queue operation
-        // This can lead to inconsistent state where the queue has messages but size is wrong
+        
+        
+        
     }
     
-    /**
-     * Send message to dead letter queue
-     */
+    
+
+
     private void sendToDeadLetterQueue(Message<T> message) {
         deadLetterQueue.offer(message);
     }
     
-    /**
-     * Start processing threads
-     */
+    
+
+
     private void startProcessingThreads() {
         int threadCount = executor.getCorePoolSize();
         for (int i = 0; i < threadCount; i++) {
@@ -345,9 +345,9 @@ public class AsyncMessageQueue<T> {
         }
     }
     
-    /**
-     * Processing loop for worker threads
-     */
+    
+
+
     private void processingLoop() {
         while (!shutdownRequested.get()) {
             try {
@@ -356,15 +356,15 @@ public class AsyncMessageQueue<T> {
                     continue;
                 }
                 
-                // The queueLock is held during processing, which can cause priority inversion
-                // A low priority message holding the lock can block high priority messages
+                
+                
                 queueLock.lock();
                 try {
                     Message<T> message = dequeue();
                     if (message != null) {
                         processMessage(message);
                     } else {
-                        // No messages available, wait a bit
+                        
                         Thread.sleep(10);
                     }
                 } finally {
@@ -374,28 +374,28 @@ public class AsyncMessageQueue<T> {
                 Thread.currentThread().interrupt();
                 break;
             } catch (Exception e) {
-                // Continue processing despite errors
+                
             }
         }
     }
     
-    /**
-     * Get current queue size
-     */
+    
+
+
     public int getCurrentQueueSize() {
         return currentQueueSize.get();
     }
     
-    /**
-     * Get current in-flight message count
-     */
+    
+
+
     public int getCurrentInFlight() {
         return currentInFlight.get();
     }
     
-    /**
-     * Get queue statistics
-     */
+    
+
+
     public QueueStats getStats() {
         return new QueueStats(
             totalEnqueued.get(),
@@ -410,9 +410,9 @@ public class AsyncMessageQueue<T> {
         );
     }
     
-    /**
-     * Reset statistics
-     */
+    
+
+
     public void resetStats() {
         totalEnqueued.set(0);
         totalDequeued.set(0);
@@ -422,44 +422,44 @@ public class AsyncMessageQueue<T> {
         totalDropped.set(0);
     }
     
-    /**
-     * Pause queue processing
-     */
+    
+
+
     public void pause() {
         paused = true;
     }
     
-    /**
-     * Resume queue processing
-     */
+    
+
+
     public void resume() {
         paused = false;
     }
     
-    /**
-     * Enable or disable the queue
-     */
+    
+
+
     public void setEnabled(boolean enabled) {
         this.queueEnabled = enabled;
     }
     
-    /**
-     * Set backpressure threshold
-     */
+    
+
+
     public void setBackpressureThreshold(int threshold) {
         this.backpressureThreshold = threshold;
     }
     
-    /**
-     * Enable or disable backpressure
-     */
+    
+
+
     public void setBackpressureEnabled(boolean enabled) {
         this.backpressureEnabled = enabled;
     }
     
-    /**
-     * Shutdown the queue gracefully
-     */
+    
+
+
     public void shutdown() {
         shutdownRequested.set(true);
         executor.shutdown();
@@ -473,25 +473,25 @@ public class AsyncMessageQueue<T> {
         }
     }
     
-    /**
-     * Get dead letter queue messages
-     */
+    
+
+
     public List<Message<T>> getDeadLetterMessages() {
         List<Message<T>> messages = new ArrayList<>();
         deadLetterQueue.drainTo(messages);
         return messages;
     }
     
-    /**
-     * Clear dead letter queue
-     */
+    
+
+
     public void clearDeadLetterQueue() {
         deadLetterQueue.clear();
     }
     
-    /**
-     * Queue statistics
-     */
+    
+
+
     public static class QueueStats {
         public final long totalEnqueued;
         public final long totalDequeued;

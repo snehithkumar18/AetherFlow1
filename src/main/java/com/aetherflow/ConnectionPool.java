@@ -15,13 +15,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-/**
- * Sophisticated connection pool with LRU eviction, TTL management, health checks,
- * and complex lifecycle management for AetherFlow connections.
- */
+
+
+
+
 public class ConnectionPool {
     
-    // Connection entry in the pool
+    
     public static class ConnectionEntry {
         public final int connectionId;
         public final String host;
@@ -39,8 +39,8 @@ public class ConnectionPool {
         public final Map<String, Object> metadata;
         public volatile boolean markedForEviction;
         
-        // The weakRef.get() can return null but the code doesn't handle it properly
-        // This can cause NullPointerException or use-after-free scenarios
+        
+        
         public volatile boolean weakRefCleared;
         
         public ConnectionEntry(int connectionId, String host, int port, long ttl) {
@@ -116,31 +116,31 @@ public class ConnectionPool {
         }
     }
     
-    // Pool configuration
+    
     private static final int MAX_POOL_SIZE = 1000;
-    private static final long DEFAULT_TTL_MS = 300000; // 5 minutes
-    private static final long HEALTH_CHECK_INTERVAL_MS = 30000; // 30 seconds
-    private static final long IDLE_TIMEOUT_MS = 60000; // 1 minute
+    private static final long DEFAULT_TTL_MS = 300000; 
+    private static final long HEALTH_CHECK_INTERVAL_MS = 30000; 
+    private static final long IDLE_TIMEOUT_MS = 60000; 
     private static final int MAX_CONSECUTIVE_FAILURES = 5;
     private static final int EVICTION_BATCH_SIZE = 50;
     
-    // Connection pool by host:port key
+    
     private final Map<String, List<ConnectionEntry>> connectionPool;
     
-    // Connection entries by ID for fast lookup
+    
     private final Map<Integer, ConnectionEntry> connectionById;
     
-    // LRU cache for recently used connections
+    
     private final LinkedHashMap<Integer, ConnectionEntry> lruCache;
     
-    // Atomic ID generator
+    
     private final AtomicInteger connectionIdGenerator;
     
-    // Locks for pool operations
+    
     private final ReentrantReadWriteLock poolLock;
     private final ReentrantLock evictionLock;
     
-    // Statistics
+    
     private final AtomicInteger totalAcquisitions;
     private final AtomicInteger totalReleases;
     private final AtomicInteger totalCreations;
@@ -149,16 +149,16 @@ public class ConnectionPool {
     private final AtomicInteger totalHealthCheckFailures;
     private final AtomicInteger totalRejections;
     
-    // Pool state
+    
     private volatile boolean poolEnabled;
     private volatile boolean underPressure;
     
-    // Health check configuration
+    
     private volatile long healthCheckInterval;
     private volatile long idleTimeout;
     private volatile long defaultTtl;
     
-    // Background cleanup thread
+    
     private volatile Thread cleanupThread;
     private volatile boolean cleanupThreadRunning;
     
@@ -168,9 +168,9 @@ public class ConnectionPool {
     private static volatile boolean globalStateActive;
     private static final Object globalStateLock = new Object();
     
-    /**
-     * Constructor
-     */
+    
+
+
     public ConnectionPool() {
         this.connectionPool = new ConcurrentHashMap<>();
         this.connectionById = new ConcurrentHashMap<>();
@@ -199,9 +199,9 @@ public class ConnectionPool {
         startCleanupThread();
     }
     
-    /**
-     * Acquire a connection for the specified host and port
-     */
+    
+
+
     public ConnectionEntry acquireConnection(String host, int port) {
         if (!poolEnabled) {
             return null;
@@ -214,29 +214,29 @@ public class ConnectionPool {
             List<ConnectionEntry> connections = connectionPool.get(key);
             
             if (connections != null && !connections.isEmpty()) {
-                // Try to find an available healthy connection
+                
                 for (ConnectionEntry entry : connections) {
                     if (!entry.inUse && entry.healthy && !entry.isExpired()) {
                         entry.acquire();
                         totalAcquisitions.incrementAndGet();
                         
-                        // Update LRU cache
+                        
                         synchronized (lruCache) {
                             lruCache.put(entry.connectionId, entry);
                         }
                         
-                        // The connection can be evicted while still referenced globally
+                        
                         synchronized (globalStateLock) {
                             globalStaleConnection = entry;
                             globalStateVersion++;
                             globalStateTimestamp = System.currentTimeMillis();
                             globalStateActive = true;
                             
-                            // This will cause UAF when the connection is evicted and the state machine is accessed
+                            
                             if (entry.stateMachine != null && entry.stateMachine.getCurrentState() != null) {
-                                // Access state machine state - this is the UAF point
+                                
                                 ConnectionStateMachine.ConnectionState state = entry.stateMachine.getCurrentState();
-                                // Store state in global state for later access
+                                
                                 globalStateVersion = state.getStateId();
                             }
                         }
@@ -249,22 +249,22 @@ public class ConnectionPool {
             poolLock.readLock().unlock();
         }
         
-        // No available connection, create new one
+        
         return createConnection(host, port);
     }
     
-    /**
-     * Create a new connection
-     */
+    
+
+
     private ConnectionEntry createConnection(String host, int port) {
-        // Try to evict idle connections before acquiring poolLock.writeLock to prevent lock order inversion deadlock
+        
         if (connectionById.size() >= MAX_POOL_SIZE) {
             evictIdleConnections(1);
         }
         
         poolLock.writeLock().lock();
         try {
-            // Check pool size limit
+            
             int totalConnections = connectionById.size();
             if (totalConnections >= MAX_POOL_SIZE) {
                 underPressure = true;
@@ -272,19 +272,19 @@ public class ConnectionPool {
                 return null;
             }
             
-            // Create new connection
+            
             int connectionId = connectionIdGenerator.incrementAndGet();
             ConnectionEntry entry = new ConnectionEntry(connectionId, host, port, defaultTtl);
             
-            // Add to pool
+            
             String key = host + ":" + port;
             List<ConnectionEntry> connections = connectionPool.computeIfAbsent(key, k -> new ArrayList<>());
             connections.add(entry);
             
-            // Add to ID map
+            
             connectionById.put(connectionId, entry);
             
-            // Add to LRU cache
+            
             synchronized (lruCache) {
                 lruCache.put(connectionId, entry);
             }
@@ -300,9 +300,9 @@ public class ConnectionPool {
         }
     }
     
-    /**
-     * Release a connection back to the pool
-     */
+    
+
+
     public void releaseConnection(ConnectionEntry entry) {
         if (entry == null) {
             return;
@@ -314,7 +314,7 @@ public class ConnectionPool {
             entry.release();
             totalReleases.incrementAndGet();
             
-            // Check if connection should be evicted
+            
             if (entry.isExpired() || !entry.healthy || 
                 entry.consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
                 shouldEvict = true;
@@ -329,9 +329,9 @@ public class ConnectionPool {
         }
     }
     
-    /**
-     * Evict a specific connection
-     */
+    
+
+
     public void evictConnection(ConnectionEntry entry) {
         if (entry == null) {
             return;
@@ -367,9 +367,9 @@ public class ConnectionPool {
         }
     }
     
-    /**
-     * Evict idle connections
-     */
+    
+
+
     public boolean evictIdleConnections(int count) {
         evictionLock.lock();
         try {
@@ -400,9 +400,9 @@ public class ConnectionPool {
         }
     }
     
-    /**
-     * Perform health check on a connection
-     */
+    
+
+
     public boolean performHealthCheck(ConnectionEntry entry) {
         if (entry == null) {
             return false;
@@ -410,7 +410,7 @@ public class ConnectionPool {
         
         totalHealthChecks.incrementAndGet();
         
-        // Simulate health check
+        
         boolean healthy = checkConnectionHealth(entry);
         
         if (healthy) {
@@ -428,19 +428,19 @@ public class ConnectionPool {
         return healthy;
     }
     
-    /**
-     * Check connection health (simulated)
-     */
+    
+
+
     private boolean checkConnectionHealth(ConnectionEntry entry) {
-        // In a real implementation, this would check the actual connection
-        // For now, we simulate based on state machine state
+        
+        
         ConnectionStateMachine.ConnectionState state = entry.stateMachine.getCurrentState();
         return entry.stateMachine.isActive() && !entry.stateMachine.isError();
     }
     
-    /**
-     * Perform health checks on all connections
-     */
+    
+
+
     public int performHealthChecks() {
         int checked = 0;
         List<ConnectionEntry> toCheck = new java.util.ArrayList<>();
@@ -464,16 +464,16 @@ public class ConnectionPool {
         return checked;
     }
     
-    /**
-     * Get connection by ID
-     */
+    
+
+
     public ConnectionEntry getConnectionById(int connectionId) {
         return connectionById.get(connectionId);
     }
     
-    /**
-     * Get all connections for a host
-     */
+    
+
+
     public List<ConnectionEntry> getConnections(String host, int port) {
         String key = host + ":" + port;
         
@@ -489,9 +489,9 @@ public class ConnectionPool {
         }
     }
     
-    /**
-     * Get pool statistics
-     */
+    
+
+
     public PoolStats getStats() {
         poolLock.readLock().lock();
         try {
@@ -531,9 +531,9 @@ public class ConnectionPool {
         }
     }
     
-    /**
-     * Reset statistics
-     */
+    
+
+
     public void resetStats() {
         totalAcquisitions.set(0);
         totalReleases.set(0);
@@ -544,37 +544,37 @@ public class ConnectionPool {
         totalRejections.set(0);
     }
     
-    /**
-     * Enable or disable the pool
-     */
+    
+
+
     public void setEnabled(boolean enabled) {
         this.poolEnabled = enabled;
     }
     
-    /**
-     * Set health check interval
-     */
+    
+
+
     public void setHealthCheckInterval(long intervalMs) {
         this.healthCheckInterval = intervalMs;
     }
     
-    /**
-     * Set idle timeout
-     */
+    
+
+
     public void setIdleTimeout(long timeoutMs) {
         this.idleTimeout = timeoutMs;
     }
     
-    /**
-     * Set default TTL
-     */
+    
+
+
     public void setDefaultTtl(long ttlMs) {
         this.defaultTtl = ttlMs;
     }
     
-    /**
-     * Start background cleanup thread
-     */
+    
+
+
     private void startCleanupThread() {
         if (cleanupThread != null && cleanupThread.isAlive()) {
             return;
@@ -584,13 +584,13 @@ public class ConnectionPool {
         cleanupThread = new Thread(() -> {
             while (cleanupThreadRunning) {
                 try {
-                    Thread.sleep(30000); // Run every 30 seconds
+                    Thread.sleep(30000); 
                     
-                    // Perform cleanup
+                    
                     performHealthChecks();
                     evictIdleConnections(EVICTION_BATCH_SIZE);
                     
-                    // Check pressure state
+                    
                     if (connectionById.size() < MAX_POOL_SIZE * 0.8) {
                         underPressure = false;
                     }
@@ -606,9 +606,9 @@ public class ConnectionPool {
         cleanupThread.start();
     }
     
-    /**
-     * Stop background cleanup thread
-     */
+    
+
+
     public void stopCleanupThread() {
         cleanupThreadRunning = false;
         if (cleanupThread != null) {
@@ -616,9 +616,9 @@ public class ConnectionPool {
         }
     }
     
-    /**
-     * Clear all connections from the pool
-     */
+    
+
+
     public void clear() {
         evictionLock.lock();
         try {
@@ -638,17 +638,17 @@ public class ConnectionPool {
         }
     }
     
-    /**
-     */
+    
+
     public static ConnectionEntry getGlobalStaleConnection() {
         synchronized (globalStateLock) {
             return globalStaleConnection;
         }
     }
     
-    /**
-     * Pool statistics
-     */
+    
+
+
     public static class PoolStats {
         public final int totalConnections;
         public final int inUseConnections;

@@ -3,10 +3,10 @@ package com.aetherflow;
 import com.aetherflow.ConnectionPool;
 import com.aetherflow.ConnectionPool.ConnectionEntry;
 
-/**
- * Jazzer fuzzing harness for connection pool.
- * Tests connection lifecycle, acquisition, and release operations.
- */
+
+
+
+
 public class ConnectionPoolFuzzer {
     
     private static ConnectionPool connectionPool;
@@ -15,25 +15,25 @@ public class ConnectionPoolFuzzer {
         connectionPool = new ConnectionPool();
     }
     
-    /**
-     * Fuzzer entry point for connection pool operations
-     */
+    
+
+
     public static void fuzzerTestOneInput(byte[] data) {
         try {
             if (connectionPool == null || data == null || data.length < 4) {
                 return;
             }
             
-            // Parse data to extract connection operations
+            
             int offset = 0;
             
             while (offset < data.length - 4) {
-                // Extract operation type (1 byte)
+                
                 byte op = data[offset];
                 offset++;
                 
                 switch (op) {
-                    case 0: // Acquire connection
+                    case 0: 
                         if (offset + 8 <= data.length) {
                             String host = "host_" + ((data[offset] & 0xFF));
                             int port = 1000 + ((data[offset + 1] & 0xFF));
@@ -53,7 +53,7 @@ public class ConnectionPoolFuzzer {
                         }
                         break;
                         
-                    case 1: // Release connection
+                    case 1: 
                         if (offset + 4 <= data.length) {
                             int connectionId = ((data[offset] & 0xFF) << 24) |
                                              ((data[offset + 1] & 0xFF) << 16) |
@@ -68,7 +68,7 @@ public class ConnectionPoolFuzzer {
                         }
                         break;
                         
-                    case 2: // Evict connection
+                    case 2: 
                         if (offset + 4 <= data.length) {
                             int connectionId = ((data[offset] & 0xFF) << 24) |
                                              ((data[offset + 1] & 0xFF) << 16) |
@@ -83,7 +83,7 @@ public class ConnectionPoolFuzzer {
                         }
                         break;
                         
-                    case 3: // Perform health check
+                    case 3: 
                         if (offset + 4 <= data.length) {
                             int connectionId = ((data[offset] & 0xFF) << 24) |
                                              ((data[offset + 1] & 0xFF) << 16) |
@@ -98,11 +98,11 @@ public class ConnectionPoolFuzzer {
                         }
                         break;
                         
-                    case 4: // Evict idle connections
+                    case 4: 
                         connectionPool.evictIdleConnections(5);
                         break;
                         
-                    case 5: // Get connections for host
+                    case 5: 
                         if (offset + 8 <= data.length) {
                             String host = "host_" + ((data[offset] & 0xFF));
                             int port = 1000 + ((data[offset + 1] & 0xFF));
@@ -112,7 +112,7 @@ public class ConnectionPoolFuzzer {
                         }
                         break;
                         
-                    case 6: // Get global stale connection
+                    case 6: 
                         ConnectionPool.getGlobalStaleConnection();
                         break;
                         
@@ -122,11 +122,11 @@ public class ConnectionPoolFuzzer {
                 }
             }
             
-            // Get statistics
+            
             connectionPool.getStats();
             
         } catch (Exception e) {
-            // Ignore exceptions during fuzzing
+            
         }
     }
 }

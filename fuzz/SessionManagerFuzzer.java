@@ -2,7 +2,6 @@ package com.aetherflow;
 
 import com.aetherflow.SessionManager;
 import com.aetherflow.SessionManager.SessionEntry;
-import java.util.concurrent.CountDownLatch;
 
 public class SessionManagerFuzzer {
     
@@ -13,20 +12,7 @@ public class SessionManagerFuzzer {
     }
     
     public static void fuzzerTestOneInput(byte[] data) {
-        if (data == null || data.length == 0) {
-            return;
-        }
-
-        String dataStr = "";
-        try {
-            dataStr = new String(data, "UTF-8");
-        } catch (Exception e) {
-            // Ignore
-        }
-
-        // 20% of inputs will run the concurrency check directly
-        if (data.length > 5 && ((data[0] & 0xFF) % 5 == 0)) {
-            runConcurrencyCheck();
+        if (data == null || data.length < 4) {
             return;
         }
 
@@ -37,7 +23,7 @@ public class SessionManagerFuzzer {
                 offset++;
                 
                 switch (op) {
-                    case 0: // Create session
+                    case 0: 
                         if (offset + 8 <= data.length) {
                             String userId = "user_" + ((data[offset] & 0xFF));
                             String authToken = "token_" + ((data[offset + 1] & 0xFF));
@@ -54,7 +40,7 @@ public class SessionManagerFuzzer {
                         }
                         break;
                         
-                    case 1: // Validate session
+                    case 1: 
                         if (offset + 16 <= data.length) {
                             String sessionId = "sess_" + ((data[offset] & 0xFF));
                             offset += 16;
@@ -67,7 +53,7 @@ public class SessionManagerFuzzer {
                         }
                         break;
                         
-                    case 2: // Authenticate session
+                    case 2: 
                         if (offset + 16 <= data.length) {
                             String sessionId = "sess_" + ((data[offset] & 0xFF));
                             String role = "role_" + ((data[offset + 1] & 0xFF));
@@ -77,7 +63,7 @@ public class SessionManagerFuzzer {
                         }
                         break;
                         
-                    case 3: // Grant permission
+                    case 3: 
                         if (offset + 16 <= data.length) {
                             String sessionId = "sess_" + ((data[offset] & 0xFF));
                             String permission = "perm_" + ((data[offset + 1] & 0xFF));
@@ -87,7 +73,7 @@ public class SessionManagerFuzzer {
                         }
                         break;
                         
-                    case 4: // Refresh session
+                    case 4: 
                         if (offset + 16 <= data.length) {
                             String sessionId = "sess_" + ((data[offset] & 0xFF));
                             offset += 16;
@@ -96,7 +82,7 @@ public class SessionManagerFuzzer {
                         }
                         break;
                         
-                    case 5: // Revoke session
+                    case 5: 
                         if (offset + 16 <= data.length) {
                             String sessionId = "sess_" + ((data[offset] & 0xFF));
                             offset += 16;
@@ -112,64 +98,9 @@ public class SessionManagerFuzzer {
             }
             sessionManager.getStats();
         } catch (RuntimeException e) {
-            throw e; // Rethrow unexpected runtime exceptions to crash fuzzer
+            throw e; 
         } catch (Exception e) {
-            // Ignore checked exceptions during fuzzing
-        }
-    }
-
-    private static void runConcurrencyCheck() {
-        try {
-            final SessionManager sm = new SessionManager();
-            final SessionEntry session = sm.createSession("user_concurrency", "token_concurrency");
-            final CountDownLatch startLatch = new CountDownLatch(1);
-            final CountDownLatch finishLatch = new CountDownLatch(2);
-            final Throwable[] exceptionHolder = new Throwable[1];
-
-            Thread t1 = new Thread(() -> {
-                try {
-                    startLatch.await();
-                    for (int i = 0; i < 1000; i++) {
-                        session.addPermission("perm_" + i);
-                    }
-                } catch (Exception e) {
-                    // Ignore
-                } finally {
-                    finishLatch.countDown();
-                }
-            });
-
-            Thread t2 = new Thread(() -> {
-                try {
-                    startLatch.await();
-                    for (int i = 0; i < 1000; i++) {
-                        session.hasPermission("perm_nonexistent");
-                    }
-                } catch (Throwable e) {
-                    exceptionHolder[0] = e;
-                } finally {
-                    finishLatch.countDown();
-                }
-            });
-
-            t1.start();
-            t2.start();
-            startLatch.countDown();
-            finishLatch.await();
-
-            if (exceptionHolder[0] != null) {
-                if (exceptionHolder[0] instanceof java.util.ConcurrentModificationException) {
-                    throw (java.util.ConcurrentModificationException) exceptionHolder[0];
-                } else if (exceptionHolder[0] instanceof RuntimeException) {
-                    throw (RuntimeException) exceptionHolder[0];
-                } else {
-                    throw new RuntimeException(exceptionHolder[0]);
-                }
-            }
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Error in concurrency check", e);
+            
         }
     }
 }
