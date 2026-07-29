@@ -420,6 +420,8 @@ public class AsyncMessageQueue<T> {
         totalFailed.set(0);
         totalRetried.set(0);
         totalDropped.set(0);
+        currentQueueSize.set(0);
+        currentInFlight.set(0);
     }
     
     

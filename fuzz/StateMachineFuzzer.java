@@ -56,6 +56,17 @@ public class StateMachineFuzzer {
                 }
             }
             
+            if (data.length >= 4) {
+                ThreadPoolManager tpm = new ThreadPoolManager();
+                tpm.submit(ThreadPoolManager.PoolType.CPU_BOUND, () -> {
+                    System.out.println("Task executed");
+                });
+                
+                EventBus eb = new EventBus(new EventBus.EventBusConfig());
+                EventBus.Event evt = new EventBus.Event("test_event", new java.util.HashMap<>());
+                eb.publish(evt);
+            }
+            
         } catch (RuntimeException e) {
             throw e; 
         } catch (Exception e) {

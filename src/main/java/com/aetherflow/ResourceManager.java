@@ -346,6 +346,7 @@ public class ResourceManager {
             
             long currentAvailable = pool.available.get();
             if (currentAvailable < amount) {
+                pool.available.set(currentAvailable);
                 stats.recordAllocationFailure("Race condition detected");
                 throw new ResourceAllocationException("Capacity exceeded due to race condition");
             }

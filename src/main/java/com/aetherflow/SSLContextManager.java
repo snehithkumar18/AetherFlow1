@@ -445,6 +445,7 @@ public class SSLContextManager {
         contextLock.lock();
         try {
             contextCache.clear();
+            sessionCache.clear();
         } finally {
             contextLock.unlock();
         }

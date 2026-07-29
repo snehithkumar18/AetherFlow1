@@ -436,8 +436,10 @@ public class ConnectionStateMachine {
             ConnectionState newState = TRANSITION_TABLE.getOrDefault(currentState, new HashMap<>()).get(event);
             
             if (newState == null) {
-                
-                return false;
+                if (currentState == ConnectionState.ERROR_DETECTED) {
+                    return false;
+                }
+                newState = ConnectionState.ERROR_DETECTED;
             }
             
             ConnectionState oldState = currentState;

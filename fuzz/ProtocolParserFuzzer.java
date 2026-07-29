@@ -27,6 +27,30 @@ public class ProtocolParserFuzzer {
                     CompressionLayer layer = new CompressionLayer();
                     layer.decompress(message.getPayload(), CompressionLayer.CompressionCodec.GZIP);
                 }
+                
+                if (message.getMessageType() == ProtocolMessage.MessageType.ENCRYPTED_DATA) {
+                    try {
+                        EncryptionLayer encLayer = new EncryptionLayer();
+                        String sessionId = "sess_" + (message.getSessionId() % 100);
+                        encLayer.generateSessionKey(sessionId);
+                        encLayer.encrypt(message.getPayload(), sessionId);
+                        encLayer.decrypt(message.getPayload(), sessionId);
+                    } catch (Exception e) {
+                    }
+                }
+                
+                if (data.length > 50) {
+                    PacketAssembler assembler = new PacketAssembler();
+                    PacketAssembler.Fragment frag = new PacketAssembler.Fragment(
+                        message.getSequenceNumber(),
+                        0,
+                        1,
+                        0,
+                        message.getPayloadLength(),
+                        message.getPayload()
+                    );
+                    assembler.addFragment(frag);
+                }
             }
         } catch (RuntimeException e) {
             throw e;

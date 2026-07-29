@@ -91,6 +91,21 @@ public class SessionManagerFuzzer {
                         }
                         break;
                         
+                    case 6: 
+                        CacheManager cache = new CacheManager(new CacheManager.CacheConfig());
+                        String cacheKey = "key_" + ((data[offset] & 0xFF));
+                        byte[] cacheValue = new byte[data[offset + 1] & 0xFF];
+                        cache.put(cacheKey, cacheValue);
+                        cache.get(cacheKey);
+                        offset += 4;
+                        break;
+                        
+                    case 7: 
+                        SSLContextManager ssl = new SSLContextManager(new SSLContextManager.SSLConfig());
+                        ssl.getSSLContext("host_" + ((data[offset] & 0xFF)), 443);
+                        offset += 4;
+                        break;
+                        
                     default:
                         offset++;
                         break;

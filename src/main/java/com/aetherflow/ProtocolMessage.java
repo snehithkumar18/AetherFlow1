@@ -426,7 +426,7 @@ public class ProtocolMessage {
             if (totalFragments <= 0 || totalFragments > 1000) {
                 return false;
             }
-            if (fragmentOffset < 0 || fragmentOffset >= totalFragmentSize) {
+            if (fragmentOffset < 0 || fragmentOffset > totalFragmentSize) {
                 return false;
             }
             if (totalFragmentSize <= 0 || totalFragmentSize > 16 * 1024 * 1024) {
@@ -434,6 +434,10 @@ public class ProtocolMessage {
             }
             
             if (fragmentIndex == totalFragments - 1 && fragmentOffset + payloadLength != totalFragmentSize) {
+                return false;
+            }
+            
+            if (fragmentOffset + payloadLength > totalFragmentSize) {
                 return false;
             }
         }

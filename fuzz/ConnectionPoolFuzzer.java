@@ -116,6 +116,18 @@ public class ConnectionPoolFuzzer {
                         ConnectionPool.getGlobalStaleConnection();
                         break;
                         
+                    case 7: 
+                        ResourceManager rm = new ResourceManager(new ResourceManager.ResourceManagerConfig());
+                        rm.allocate(ResourceManager.ResourceType.MEMORY, 1024, "owner_" + ((data[offset] & 0xFF)));
+                        offset += 4;
+                        break;
+                        
+                    case 8: 
+                        TrafficShaper shaper = new TrafficShaper(10000, 1000);
+                        shaper.tryConsume(data[offset] & 0xFF);
+                        offset += 4;
+                        break;
+                        
                     default:
                         offset++;
                         break;

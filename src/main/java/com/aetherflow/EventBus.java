@@ -436,6 +436,7 @@ public class EventBus {
 
     public void clearDeadLetterQueue() {
         deadLetterQueue.clear();
+        replayBuffer.clear();
     }
     
     
