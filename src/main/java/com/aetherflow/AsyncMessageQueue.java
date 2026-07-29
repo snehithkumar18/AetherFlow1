@@ -196,10 +196,6 @@ public class AsyncMessageQueue<T> {
             return false;
         }
         
-        if (maxRetries < 0) {
-            maxRetries = Math.abs(maxRetries);
-        }
-        
         Message<T> message = new Message<>(payload, priority, maxRetries);
         
         queueLock.lock();

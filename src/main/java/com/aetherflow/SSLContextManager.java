@@ -238,9 +238,6 @@ public class SSLContextManager {
 
 
     public SSLContext getSSLContext(String host, int port) throws SSLException {
-        if (port <= 0) {
-            port = 443;
-        }
         String contextKey = host + ":" + port;
         
         SSLContext context = contextCache.get(contextKey);

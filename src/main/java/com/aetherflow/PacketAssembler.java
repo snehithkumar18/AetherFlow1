@@ -245,6 +245,10 @@ public class PacketAssembler {
             return "Invalid fragment offset";
         }
         
+        if (fragment.fragmentOffset > fragment.totalSize) {
+            return "Fragment offset exceeds total size";
+        }
+        
         if (fragment.totalSize <= 0 || fragment.totalSize > MAX_TOTAL_SIZE) {
             return "Invalid total size";
         }

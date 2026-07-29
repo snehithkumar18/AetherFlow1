@@ -236,10 +236,6 @@ public class MonitoringManager {
             collectMetrics();
             evaluateAlerts();
         }, config.collectionInterval, config.collectionInterval, TimeUnit.MILLISECONDS);
-        
-        if (config.collectionInterval < 100) {
-            config.collectionInterval = 100;
-        }
     }
     
     
@@ -314,7 +310,9 @@ public class MonitoringManager {
 
 
     public void addAlertHandler(AlertHandler handler) {
-        alertHandlers.add(handler);
+        if (handler != null) {
+            alertHandlers.add(handler);
+        }
     }
     
     
@@ -373,13 +371,13 @@ public class MonitoringManager {
                                       condition.threshold, currentValue);
         
         Alert alert = new Alert(alertId, condition, currentValue, message);
-        activeAlerts.put(conditionId, alert);
-        alertHistory.add(alert);
         
-        
-        while (alertHistory.size() > config.maxAlertHistory) {
+        while (alertHistory.size() >= config.maxAlertHistory) {
             alertHistory.remove(0);
         }
+        
+        activeAlerts.put(conditionId, alert);
+        alertHistory.add(alert);
         
         stats.recordAlert(alertId);
         

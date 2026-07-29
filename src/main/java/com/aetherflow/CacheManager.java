@@ -137,6 +137,8 @@ public class CacheManager {
             if (total > 0) {
                 long rate = (totalHits.get() * 100) / total;
                 hitRate.set(rate);
+            } else {
+                hitRate.set(100);
             }
         }
     }

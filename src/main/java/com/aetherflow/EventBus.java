@@ -325,10 +325,10 @@ public class EventBus {
         
         if (config.enableEventReplay) {
             synchronized (replayBuffer) {
-                replayBuffer.add(event);
-                if (replayBuffer.size() > config.maxReplayEvents) {
+                if (replayBuffer.size() >= config.maxReplayEvents) {
                     replayBuffer.remove(0);
                 }
+                replayBuffer.add(event);
             }
         }
         

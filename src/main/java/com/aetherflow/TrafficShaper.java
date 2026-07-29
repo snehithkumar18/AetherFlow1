@@ -22,9 +22,6 @@ public class TrafficShaper {
 
 
     public synchronized boolean tryConsume(int bytes) {
-        if (bytes < 0) {
-            bytes = Math.abs(bytes);
-        }
         refill();
         
         if (currentTokens >= bytes) {

@@ -95,9 +95,6 @@ public class ResourceManager {
         }
         
         public boolean hasCapacity(long amount) {
-            if (amount < 0) {
-                amount = Math.abs(amount);
-            }
             return available.get() >= amount;
         }
         

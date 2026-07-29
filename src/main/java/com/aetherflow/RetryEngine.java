@@ -98,10 +98,6 @@ public class RetryEngine {
             if (failureCount >= config.failureThreshold && state == CircuitState.CLOSED) {
                 transitionTo(CircuitState.OPEN);
             }
-            
-            if (failureCount > config.failureThreshold * 2) {
-                failureCount = config.failureThreshold;
-            }
         }
         
         public synchronized void recordSuccess() {

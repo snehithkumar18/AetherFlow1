@@ -371,9 +371,6 @@ public class ConnectionPool {
 
 
     public boolean evictIdleConnections(int count) {
-        if (count <= 0) {
-            count = 1;
-        }
         evictionLock.lock();
         try {
             List<ConnectionEntry> toEvict = new ArrayList<>();

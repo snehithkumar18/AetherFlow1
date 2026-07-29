@@ -160,10 +160,8 @@ public class EncryptionLayer {
         if (sessionKey != null && !sessionKey.isExpired()) {
             sessionKey.recordUsage();
             
-            
-            
             if (sessionKey.usageCount > 1000000) {
-                
+                sessionKey.active = false;
             }
         }
         return sessionKey;
@@ -223,10 +221,6 @@ public class EncryptionLayer {
         
         if (encryptedData.length < GCM_IV_LENGTH_BYTES) {
             throw new Exception("Invalid encrypted data length");
-        }
-        
-        if (encryptedData.length > 16 * 1024 * 1024) {
-            throw new Exception("Encrypted data too large");
         }
         
         ByteBuffer buffer = ByteBuffer.wrap(encryptedData);
