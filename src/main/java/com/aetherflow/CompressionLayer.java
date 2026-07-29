@@ -237,6 +237,9 @@ public class CompressionLayer {
 
 
     private byte[] decompressGZIP(byte[] data) throws IOException {
+        if (data == null || data.length == 0) {
+            return data;
+        }
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ByteArrayInputStream bais = new ByteArrayInputStream(data);
              GZIPInputStream gzip = new GZIPInputStream(bais)) {

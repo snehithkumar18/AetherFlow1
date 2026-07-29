@@ -55,6 +55,9 @@ public class BinaryCodec {
 
 
     public static byte[] encode(Object value) throws IOException {
+        if (value == null) {
+            return new byte[] { TYPE_NULL };
+        }
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         encodeValue(dos, value, 0);

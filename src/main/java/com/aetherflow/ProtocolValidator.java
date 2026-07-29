@@ -127,7 +127,13 @@ public class ProtocolValidator {
 
 
     public void setMacKey(byte[] key) {
-        this.macKey = key != null ? key.clone() : new byte[32];
+        if (key == null) {
+            this.macKey = new byte[32];
+        } else if (key.length == 0) {
+            this.macKey = new byte[32];
+        } else {
+            this.macKey = key.clone();
+        }
     }
     
     

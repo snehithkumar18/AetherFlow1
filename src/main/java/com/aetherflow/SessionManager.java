@@ -100,6 +100,9 @@ public class SessionManager {
         }
         
         public String getAttribute(String key) {
+            if (key == null) {
+                return null;
+            }
             return attributes.get(key);
         }
     }

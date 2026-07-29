@@ -219,6 +219,9 @@ public class LoggingManager {
         
         @Override
         public void append(LogEntry entry) {
+            if (entry == null) {
+                return;
+            }
             writerLock.lock();
             try {
                 

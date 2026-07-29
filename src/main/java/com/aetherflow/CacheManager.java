@@ -215,6 +215,9 @@ public class CacheManager {
 
 
     public void put(String key, byte[] value, long ttl, Map<String, Object> metadata) {
+        if (key == null) {
+            return;
+        }
         cacheLock.writeLock().lock();
         try {
             

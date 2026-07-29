@@ -632,7 +632,6 @@ public class ConnectionStateMachine {
             currentState = ConnectionState.IDLE;
             transitionHistory.clear();
             
-            
             for (AtomicInteger counter : stateVisitCounters.values()) {
                 counter.set(0);
             }

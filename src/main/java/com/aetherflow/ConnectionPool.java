@@ -100,6 +100,9 @@ public class ConnectionPool {
         }
         
         public long getIdleTime() {
+            if (lastUsedTime == 0) {
+                return 0;
+            }
             return System.currentTimeMillis() - lastUsedTime;
         }
         

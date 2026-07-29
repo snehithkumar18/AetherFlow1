@@ -103,6 +103,9 @@ public class PacketAssembler {
         }
         
         public long getIdleTime() {
+            if (lastUpdateTime == 0) {
+                return 0;
+            }
             return System.currentTimeMillis() - lastUpdateTime;
         }
     }
